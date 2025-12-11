@@ -514,8 +514,7 @@ function generateRecipe() {
   if (addedWaterText !== "–") lines.push("- Woda do dodania do ciasta: " + addedWaterText + " g");
 
   var summary = document.getElementById("recipeSummary");
-  if (summary) summary.value = lines.join("
-");
+  if (summary) summary.value = lines.join("\n");
 }
 </script>
 
