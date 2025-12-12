@@ -104,14 +104,16 @@
     }
 
     .btn {
-      margin-top: 0.4rem;
-      padding: 0.4rem 0.8rem;
-      font-size: 0.82rem;
-      border-radius: 999px;
-      border: 1px solid #777;
-      background: #f3f3f3;
-      cursor: pointer;
-    }
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  border: 1px solid #777;
+  background: #f3f3f3;
+  cursor: pointer;
+  text-align: center;     /* NOWE */
+  white-space: normal;    /* NOWE – pozwala na złamanie linii */
+}
 
     .btn:hover {
       background: #e8e8e8;
@@ -423,9 +425,13 @@ function updateScaleButton() {
   const T = num("totalDry");
   const btn = document.getElementById("scaleBtn");
   if (!btn) return;
-  btn.textContent = T > 0
-    ? `Przeskaluj do zamierzonej masy ${T} g`
-    : "Przeskaluj";
+
+  if (T > 0) {
+    // wymuszone 2 linie + 450 i g zawsze razem
+    btn.innerHTML = `Przeskaluj do zamierzonej masy<br>${T}&nbsp;g`;
+  } else {
+    btn.innerHTML = "Przeskaluj";
+  }
 }
 
 function scaleFlours() {
