@@ -80,19 +80,18 @@
 
     .grid {
       display: grid;
-      grid-template-columns: 1.3fr 1fr;
+      /* opis po lewej, pole po prawej – prawa kolumna ma zawsze 220px */
+      grid-template-columns: 1.6fr 220px;
       gap: 0.3rem 0.6rem;
       max-width: 650px;
       align-items: center;
     }
 
-    /* TUTAJ: krótsze pola w siatce (sekcje 3, 4, 5) */
     .grid input[type="number"],
     .grid input[type="text"],
     .grid .output {
-      width: auto;
-      max-width: 180px;
-      justify-self: start;
+      width: 100%;          /* wypełnia prawą kolumnę (220px) */
+      justify-self: start;  /* wyrównanie do lewej wewnątrz kolumny */
     }
 
     .btn {
@@ -145,15 +144,10 @@
       resize: vertical;
     }
 
-    /* Prosta responsywność – NIE ruszamy tabeli mąk */
+    /* Na małych ekranach tylko mniejszy margines, układ zostaje 2-kolumnowy */
     @media (max-width: 700px) {
       body {
         margin: 0.5rem;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-        max-width: 100%;
       }
     }
   </style>
@@ -228,9 +222,8 @@
     <span>Łączna masa mąki i dodanego glutenu [g]</span>
     <span class="output" id="sumDryDisplay">–</span>
 
-    <button class="btn" id="scaleBtn"
-            onclick="scaleFlours()"
-            style="grid-column: 1 / -1; margin-top: 0.5rem;">
+    <span></span>
+    <button class="btn" id="scaleBtn" onclick="scaleFlours()">
       Przeskaluj
     </button>
 
