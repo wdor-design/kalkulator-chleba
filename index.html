@@ -80,9 +80,9 @@
 
     .grid {
       display: grid;
-      /* opis po lewej, pole po prawej – prawa kolumna ma zawsze 220px */
-      grid-template-columns: 1.6fr 220px;
-      gap: 0.3rem 0.6rem;
+      /* opis po lewej, pole po prawej – prawa kolumna ok. 200px */
+      grid-template-columns: 1.6fr 200px;
+      gap: 0.3rem 1rem; /* większy odstęp między nazwą pola a polem */
       max-width: 650px;
       align-items: center;
     }
@@ -90,8 +90,10 @@
     .grid input[type="number"],
     .grid input[type="text"],
     .grid .output {
-      width: 100%;          /* wypełnia prawą kolumnę (220px) */
-      justify-self: start;  /* wyrównanie do lewej wewnątrz kolumny */
+      width: 100%;          /* wszystkie pola (niebieskie + szare) tej samej szerokości */
+      justify-self: start;
+      display: block;
+      box-sizing: border-box;
     }
 
     .btn {
@@ -114,8 +116,6 @@
       border: 1px solid #ddd;
       padding: 0.25rem 0.35rem;
       border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
       min-height: 1.8rem;
     }
 
