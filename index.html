@@ -12,7 +12,6 @@
   <!-- iOS PWA support -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <!-- Używamy tej samej ikonki co w nagłówku -->
   <link rel="apple-touch-icon" href="bread-icon.png" />
 
   <style>
@@ -23,13 +22,13 @@
       background: #fff;
     }
 
-    /* Nagłówek z ikoną */
     .title-row {
       display: flex;
       align-items: center;
       gap: 0.6rem;
       margin-bottom: 0.2rem;
     }
+
     .title-icon {
       width: 30px;
       height: 30px;
@@ -38,7 +37,6 @@
 
     h1 {
       font-size: 1.35rem;
-      margin-bottom: 0.3rem;
       margin: 0;
     }
 
@@ -60,7 +58,7 @@
       font-size: 0.86rem;
     }
 
-    /* wspólny styl opisów pól (takich jak "Docelowa hydracja...") */
+    /* wspólny styl opisów pól */
     .field-label {
       font-size: 0.86rem;
       color: #222;
@@ -102,9 +100,8 @@
 
     .grid {
       display: grid;
-      /* opis po lewej, pole po prawej – prawa kolumna 170px */
       grid-template-columns: 1.6fr 170px;
-      gap: 0.3rem 1rem; /* większy odstęp między tekstem a polem */
+      gap: 0.3rem 1rem;
       max-width: 650px;
       align-items: center;
     }
@@ -127,7 +124,7 @@
       background: #f3f3f3;
       cursor: pointer;
       text-align: center;
-      white-space: normal; /* pozwala na złamanie linii */
+      white-space: normal;
     }
 
     .btn:hover {
@@ -168,11 +165,8 @@
       resize: vertical;
     }
 
-    /* Na małych ekranach tylko mniejszy margines, układ zostaje 2-kolumnowy */
     @media (max-width: 700px) {
-      body {
-        margin: 0.5rem;
-      }
+      body { margin: 0.5rem; }
     }
   </style>
 </head>
@@ -251,9 +245,7 @@
     <span class="output" id="sumDryDisplay">–</span>
 
     <span></span>
-    <button class="btn" id="scaleBtn">
-      Przeskaluj
-    </button>
+    <button class="btn" id="scaleBtn">Przeskaluj</button>
 
     <span class="field-label">Zawartość glutenu w mieszance [g]</span>
     <span class="output" id="sumGlutenDisplay">–</span>
@@ -294,8 +286,8 @@
     <label for="targetHydro">Docelowa hydracja ciasta [%]</label>
     <input type="number" id="targetHydro" step="0.5" min="0" />
 
-    <span class="field-label">Woda do dodania [g]</span>
-    <span class="output" id="addedWaterDisplay">–</span>
+    <label for="addedWater">Woda do dodania [g]</label>
+    <input type="number" id="addedWater" step="1" min="0" />
 
     <span class="field-label">Łączna masa mąki (mieszanka, gluten, mąka z zakwasu) [g]</span>
     <span class="output" id="totalFlourDisplay">–</span>
@@ -341,6 +333,10 @@ function setText(id, val, decimals = 1) {
   }
 }
 
+/* DWUKIERUNKOWA HYDRACJA: kontrola "ostatnio edytowane" */
+let lastHydroEdit = "target";   // "target" albo "water"
+let hydroSync = false;          // blokada przed pętlą
+
 /* ZAPIS / ODCZYT USTAWIEŃ (LOCALSTORAGE) */
 const fieldsToSave = [
   "totalDry",
@@ -349,7 +345,8 @@ const fieldsToSave = [
   "p1","p2","p3",
   "glutenProd",
   "levain","levainHydro",
-  "targetHydro"
+  "targetHydro",
+  "addedWater"
 ];
 
 function restoreFields() {
@@ -365,7 +362,13 @@ function setupAutosave() {
   fieldsToSave.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
+
     el.addEventListener("input", () => {
+      if (!hydroSync) {
+        if (id === "targetHydro") lastHydroEdit = "target";
+        if (id === "addedWater") lastHydroEdit = "water";
+      }
+
       localStorage.setItem("chleb_" + id, el.value);
       recalc();
       updateScaleButton();
@@ -424,19 +427,39 @@ function recalc() {
   setText("levainWaterDisplay", levWater);
 
   const totalFlour = sumDry + levFlour;
-  const targetH = num("targetHydro");
-
-  const totalWater = (!isNaN(targetH) && targetH > 0)
-    ? totalFlour * targetH / 100
-    : NaN;
-
-  const addedWater = (!isNaN(totalWater))
-    ? Math.max(0, totalWater - levWater)
-    : NaN;
-
   setText("totalFlourDisplay", totalFlour);
-  setText("totalWaterDisplay", totalWater);
-  setText("addedWaterDisplay", addedWater);
+
+  /* Dwukierunkowa hydracja */
+  hydroSync = true;
+
+  if (totalFlour > 0) {
+    if (lastHydroEdit === "target") {
+      const targetH = num("targetHydro");
+      const totalWater = (!isNaN(targetH) && targetH > 0)
+        ? totalFlour * targetH / 100
+        : NaN;
+
+      const addedWater = (!isNaN(totalWater))
+        ? Math.max(0, totalWater - levWater)
+        : NaN;
+
+      setText("totalWaterDisplay", totalWater);
+      setValue("addedWater", addedWater, 1);
+      localStorage.setItem("chleb_addedWater", document.getElementById("addedWater").value);
+    } else {
+      const aw = Math.max(0, num("addedWater"));
+      const totalWater = levWater + aw;
+      const hydro = totalWater / totalFlour * 100;
+
+      setText("totalWaterDisplay", totalWater);
+      setValue("targetHydro", hydro, 1);
+      localStorage.setItem("chleb_targetHydro", document.getElementById("targetHydro").value);
+    }
+  } else {
+    setText("totalWaterDisplay", NaN);
+  }
+
+  hydroSync = false;
 }
 
 /* SKALOWANIE */
@@ -457,7 +480,7 @@ function scaleFlours() {
   const G = num("glutenProd");
 
   if (T <= 0) {
-    alert("Najpierw ustaw łączną masę mąki i glutenu.");
+    alert("Najpierw ustaw łączną masę mieszanki.");
     return;
   }
 
@@ -491,7 +514,7 @@ function clearFields() {
   [
     "totalDry", "flourName1", "flourName2", "flourName3",
     "m1","m2","m3","p1","p2","p3",
-    "glutenProd","levain","levainHydro","targetHydro"
+    "glutenProd","levain","levainHydro","targetHydro","addedWater"
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
@@ -505,7 +528,7 @@ function clearFields() {
   [
     "sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
     "levainFlourDisplay","levainWaterDisplay",
-    "totalFlourDisplay","totalWaterDisplay","addedWaterDisplay"
+    "totalFlourDisplay","totalWaterDisplay"
   ].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = "–";
@@ -528,6 +551,7 @@ function generateRecipe() {
   const L = num("levain");
   const Lh = num("levainHydro");
   const targetHydro = num("targetHydro");
+  const addedWater = num("addedWater");
 
   const fn1 = document.getElementById("flourName1").value || "Mąka 1";
   const fn2 = document.getElementById("flourName2").value || "Mąka 2";
@@ -540,17 +564,16 @@ function generateRecipe() {
   const levWaterText = document.getElementById("levainWaterDisplay").textContent;
   const totalFlourText = document.getElementById("totalFlourDisplay").textContent;
   const totalWaterText = document.getElementById("totalWaterDisplay").textContent;
-  const addedWaterText = document.getElementById("addedWaterDisplay").textContent;
 
   lines.push("PRZEPIS – chleb na zakwasie\n");
 
   if (totalDry > 0)
-    lines.push("Łączna masa mąki i glutenu: " + totalDry.toFixed(1) + " g\n");
+    lines.push("Łączna masa mieszanki mąk (z glutenem): " + totalDry.toFixed(1) + " g\n");
 
   lines.push("Kompozycja mąk:");
-  if (m1 > 0) lines.push(`- ${fn1}: ${m1.toFixed(1)} g (${p1.toFixed(1)} g białka / 100 g)`);
-  if (m2 > 0) lines.push(`- ${fn2}: ${m2.toFixed(1)} g (${p2.toFixed(1)} g białka / 100 g)`);
-  if (m3 > 0) lines.push(`- ${fn3}: ${m3.toFixed(1)} g (${p3.toFixed(1)} g białka / 100 g)`);
+  if (m1 > 0) lines.push(`- ${fn1}: ${m1.toFixed(1)} g (białko: ${p1.toFixed(1)} g/100 g)`);
+  if (m2 > 0) lines.push(`- ${fn2}: ${m2.toFixed(1)} g (białko: ${p2.toFixed(1)} g/100 g)`);
+  if (m3 > 0) lines.push(`- ${fn3}: ${m3.toFixed(1)} g (białko: ${p3.toFixed(1)} g/100 g)`);
   if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
 
   lines.push("\nZawartość glutenu:");
@@ -568,7 +591,7 @@ function generateRecipe() {
   if (targetHydro > 0) lines.push("- Docelowa hydracja: " + targetHydro.toFixed(1) + "%");
   if (totalFlourText !== "–") lines.push("- Łączna masa mąki: " + totalFlourText + " g");
   if (totalWaterText !== "–") lines.push("- Łączna ilość wody: " + totalWaterText + " g");
-  if (addedWaterText !== "–") lines.push("- Woda do dodania: " + addedWaterText + " g");
+  if (addedWater > 0) lines.push("- Woda do dodania: " + addedWater.toFixed(1) + " g");
 
   document.getElementById("recipeSummary").value = lines.join("\n");
 }
