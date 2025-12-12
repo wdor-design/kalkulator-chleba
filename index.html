@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <title>Chleb na zakwasie — Kalkulator zawartości glutenu i hydratacji ciasta</title>
+  <title>Chleb na zakwasie — Kalkulator zawartości glutenu i hydracji ciasta</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- PWA manifest -->
@@ -12,7 +12,8 @@
   <!-- iOS PWA support -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="apple-touch-icon" href="bread-icon.png">
+  <!-- Używamy tej samej ikonki co w nagłówku -->
+  <link rel="apple-touch-icon" href="bread-icon.png" />
 
   <style>
     body {
@@ -22,9 +23,23 @@
       background: #fff;
     }
 
+    /* Nagłówek z ikoną */
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.2rem;
+    }
+    .title-icon {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+    }
+
     h1 {
       font-size: 1.35rem;
       margin-bottom: 0.3rem;
+      margin: 0;
     }
 
     h2 {
@@ -45,7 +60,7 @@
       font-size: 0.86rem;
     }
 
-    /* wspólny styl opisów pól (takich jak "Docelowa hydratacja...") */
+    /* wspólny styl opisów pól (takich jak "Docelowa hydracja...") */
     .field-label {
       font-size: 0.86rem;
       color: #222;
@@ -104,16 +119,16 @@
     }
 
     .btn {
-  margin-top: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.82rem;
-  border-radius: 999px;
-  border: 1px solid #777;
-  background: #f3f3f3;
-  cursor: pointer;
-  text-align: center;     /* NOWE */
-  white-space: normal;    /* NOWE – pozwala na złamanie linii */
-}
+      margin-top: 0.4rem;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.82rem;
+      border-radius: 999px;
+      border: 1px solid #777;
+      background: #f3f3f3;
+      cursor: pointer;
+      text-align: center;
+      white-space: normal; /* pozwala na złamanie linii */
+    }
 
     .btn:hover {
       background: #e8e8e8;
@@ -164,17 +179,21 @@
 
 <body>
 
-<h1>Chleb na zakwasie</h1>
+<div class="title-row">
+  <img src="bread-icon.png" alt="" class="title-icon" />
+  <h1>Chleb na zakwasie</h1>
+</div>
+
 <div style="font-size: 0.95rem; color:#444; margin-bottom:1rem;">
-  <strong>Kalkulator zawartości glutenu i hydratacji ciasta</strong>
+  <strong>Kalkulator zawartości glutenu i hydracji ciasta</strong>
 </div>
 
 <!-- 1. SUMA SUCHYCH -->
 <div class="section">
-  <h2>1. Łączna masa mąki</h2>
+  <h2>1. Łączna masa mieszanki mąk</h2>
 
   <div class="grid">
-    <label for="totalDry">Łączna masa mąki (do 3 rodzajów)i glutenu (jeśli jest dodany) [g]</label>
+    <label for="totalDry">Łączna masa mieszanki mąk (łącznie z glutenem) [g]</label>
     <input type="number" id="totalDry" step="1" min="0" />
   </div>
 </div>
@@ -187,7 +206,7 @@
     <div class="field-label">Typ</div>
     <div class="field-label">Ilość [g]</div>
     <div class="field-label">Udział [%]</div>
-    <div class="field-label">Zawartość białka / 100g</div>
+    <div class="field-label">Białko [g/100 g]</div>
     <div class="field-label">Gluten z mąki [g]</div>
   </div>
 
@@ -218,14 +237,14 @@
 
 <!-- 3. GLUTEN -->
 <div class="section">
-  <h2>3. Zawartość i ewentualny dodatek glutenu</h2>
+  <h2>3. Gluten: zawartość i suplementacja</h2>
 
   <p class="hint">
-    Po dodaniu glutenu możesz użyć przycisku „Przeskaluj”, aby automatycznie dostosować masę mąk do podanej na początku masy docelowej.
+    Po dodaniu glutenu możesz użyć przycisku „Przeskaluj”, aby automatycznie dostosować ilości mąk do podanej na początku masy docelowej.
   </p>
 
   <div class="grid">
-    <label for="glutenProd">Dodany gluten witalny (80%) [g]</label>
+    <label for="glutenProd">Dodatek glutenu witalnego (80%) [g]</label>
     <input type="number" id="glutenProd" step="0.5" min="0" />
 
     <span class="field-label">Łączna masa mąki i dodanego glutenu [g]</span>
@@ -244,44 +263,44 @@
   </div>
 </div>
 
-<!-- 4. LEVAIN -->
+<!-- 4. ZAKWAS -->
 <div class="section">
-  <h2>4. Zakwas / levain</h2>
+  <h2>4. Zakwas (levain)</h2>
 
   <p class="hint">
-    Zwykle hydratacja zakwasu wynosi 100%, gdyż do jego sporządzenia często używa się równych proporcji mąki i wody.
+    Zwykle hydracja zakwasu wynosi 100%, bo najczęściej robi się go z równych ilości mąki i wody.
   </p>
 
   <div class="grid">
-    <label for="levain">Levain / zakwas [g]</label>
+    <label for="levain">Zakwas (levain) [g]</label>
     <input type="number" id="levain" step="1" min="0" />
 
-    <label for="levainHydro">Hydratacja levain [%]</label>
+    <label for="levainHydro">Hydracja zakwasu [%]</label>
     <input type="number" id="levainHydro" step="1" min="0" />
 
-    <span class="field-label">Mąka w levain [g]</span>
+    <span class="field-label">Mąka w zakwasie [g]</span>
     <span class="output" id="levainFlourDisplay">–</span>
 
-    <span class="field-label">Woda w levain [g]</span>
+    <span class="field-label">Woda w zakwasie [g]</span>
     <span class="output" id="levainWaterDisplay">–</span>
   </div>
 </div>
 
-<!-- 5. HYDRATACJA CIASTA -->
+<!-- 5. HYDRACJA CIASTA -->
 <div class="section">
-  <h2>5. Hydratacja ciasta</h2>
+  <h2>5. Hydracja ciasta</h2>
 
   <div class="grid">
-    <label for="targetHydro">Docelowa hydratacja ciasta [%]</label>
+    <label for="targetHydro">Docelowa hydracja ciasta [%]</label>
     <input type="number" id="targetHydro" step="0.5" min="0" />
 
-    <span class="field-label">Woda do dodania do ciasta [g]</span>
+    <span class="field-label">Woda do dodania [g]</span>
     <span class="output" id="addedWaterDisplay">–</span>
 
-    <span class="field-label">Całkowita mąka (mąki + gluten + mąka z levain) [g]</span>
+    <span class="field-label">Łączna masa mąki (mieszanka, gluten, mąka z zakwasu) [g]</span>
     <span class="output" id="totalFlourDisplay">–</span>
 
-    <span class="field-label">Całkowita woda (w tym levain) [g]</span>
+    <span class="field-label">Łączna ilość wody (łącznie z zakwasem) [g]</span>
     <span class="output" id="totalWaterDisplay">–</span>
   </div>
 </div>
@@ -427,7 +446,6 @@ function updateScaleButton() {
   if (!btn) return;
 
   if (T > 0) {
-    // wymuszone 2 linie + 450 i g zawsze razem
     btn.innerHTML = `Przeskaluj do zamierzonej masy<br>${T}&nbsp;g`;
   } else {
     btn.innerHTML = "Przeskaluj";
@@ -453,7 +471,7 @@ function scaleFlours() {
 
   const flourTarget = T - G;
   if (flourTarget < 0) {
-    alert("Glutenu jest więcej niż masa docelowa! Zmniejsz gluten lub zwiększ masę.");
+    alert("Nie można przeskalować — ilość glutenu przekracza masę docelową mieszanki.");
     return;
   }
 
@@ -530,26 +548,26 @@ function generateRecipe() {
     lines.push("Łączna masa mąki i glutenu: " + totalDry.toFixed(1) + " g\n");
 
   lines.push("Kompozycja mąk:");
-  if (m1 > 0) lines.push(`- ${fn1}: ${m1.toFixed(1)} g (${p1.toFixed(1)} g białka / 100g)`);
-  if (m2 > 0) lines.push(`- ${fn2}: ${m2.toFixed(1)} g (${p2.toFixed(1)} g białka / 100g)`);
-  if (m3 > 0) lines.push(`- ${fn3}: ${m3.toFixed(1)} g (${p3.toFixed(1)} g białka / 100g)`);
+  if (m1 > 0) lines.push(`- ${fn1}: ${m1.toFixed(1)} g (${p1.toFixed(1)} g białka / 100 g)`);
+  if (m2 > 0) lines.push(`- ${fn2}: ${m2.toFixed(1)} g (${p2.toFixed(1)} g białka / 100 g)`);
+  if (m3 > 0) lines.push(`- ${fn3}: ${m3.toFixed(1)} g (${p3.toFixed(1)} g białka / 100 g)`);
   if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
 
   lines.push("\nZawartość glutenu:");
   if (sumDryText !== "–") lines.push("- Łączna masa mąki i dodanego glutenu: " + sumDryText + " g");
   if (sumGlutenText !== "–") lines.push("- Zawartość glutenu w mieszance: " + sumGlutenText + " g");
-  if (glutenPctText !== "–") lines.push("- Procentowa zawartość glutenu: " + glutenPctText + "%");
+  if (glutenPctText !== "–") lines.push("- Zawartość glutenu [%]: " + glutenPctText + "%");
 
-  lines.push("\nZakwas / levain:");
-  if (L > 0) lines.push("- Ilość levain: " + L.toFixed(1) + " g");
-  if (Lh > 0) lines.push("- Hydratacja levain: " + Lh.toFixed(1) + "%");
-  if (levFlourText !== "–") lines.push("- Mąka w levain: " + levFlourText + " g");
-  if (levWaterText !== "–") lines.push("- Woda w levain: " + levWaterText + " g");
+  lines.push("\nZakwas (levain):");
+  if (L > 0) lines.push("- Ilość zakwasu: " + L.toFixed(1) + " g");
+  if (Lh > 0) lines.push("- Hydracja zakwasu: " + Lh.toFixed(1) + "%");
+  if (levFlourText !== "–") lines.push("- Mąka w zakwasie: " + levFlourText + " g");
+  if (levWaterText !== "–") lines.push("- Woda w zakwasie: " + levWaterText + " g");
 
-  lines.push("\nHydratacja ciasta:");
-  if (targetHydro > 0) lines.push("- Docelowa hydratacja: " + targetHydro.toFixed(1) + "%");
-  if (totalFlourText !== "–") lines.push("- Całkowita mąka: " + totalFlourText + " g");
-  if (totalWaterText !== "–") lines.push("- Całkowita woda: " + totalWaterText + " g");
+  lines.push("\nHydracja ciasta:");
+  if (targetHydro > 0) lines.push("- Docelowa hydracja: " + targetHydro.toFixed(1) + "%");
+  if (totalFlourText !== "–") lines.push("- Łączna masa mąki: " + totalFlourText + " g");
+  if (totalWaterText !== "–") lines.push("- Łączna ilość wody: " + totalWaterText + " g");
   if (addedWaterText !== "–") lines.push("- Woda do dodania: " + addedWaterText + " g");
 
   document.getElementById("recipeSummary").value = lines.join("\n");
