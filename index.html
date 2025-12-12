@@ -45,6 +45,13 @@
       font-size: 0.86rem;
     }
 
+    /* wspólny styl opisów pól (takich jak "Docelowa hydratacja...") */
+    .field-label {
+      font-size: 0.86rem;
+      color: #222;
+      line-height: 1.3;
+    }
+
     input[type="number"],
     input[type="text"],
     textarea {
@@ -175,11 +182,11 @@
   <h2>2. Kompozycja mąk</h2>
 
   <div class="flour-row flour-header">
-    <div>Typ</div>
-    <div>Ilość [g]</div>
-    <div>Udział [%]</div>
-    <div>Zawartość białka / 100g</div>
-    <div>Gluten z mąki [g]</div>
+    <div class="field-label">Typ</div>
+    <div class="field-label">Ilość [g]</div>
+    <div class="field-label">Udział [%]</div>
+    <div class="field-label">Zawartość białka / 100g</div>
+    <div class="field-label">Gluten z mąki [g]</div>
   </div>
 
   <div class="flour-row">
@@ -219,7 +226,7 @@
     <label for="glutenProd">Dodany gluten witalny (80%) [g]</label>
     <input type="number" id="glutenProd" step="0.5" min="0" />
 
-    <span>Łączna masa mąki i dodanego glutenu [g]</span>
+    <span class="field-label">Łączna masa mąki i dodanego glutenu [g]</span>
     <span class="output" id="sumDryDisplay">–</span>
 
     <span></span>
@@ -227,10 +234,10 @@
       Przeskaluj
     </button>
 
-    <span>Zawartość glutenu w mieszance [g]</span>
+    <span class="field-label">Zawartość glutenu w mieszance [g]</span>
     <span class="output" id="sumGlutenDisplay">–</span>
 
-    <span>Zawartość glutenu w mieszance [%]</span>
+    <span class="field-label">Zawartość glutenu w mieszance [%]</span>
     <span class="output" id="glutenPercentDisplay">–</span>
   </div>
 </div>
@@ -250,10 +257,10 @@
     <label for="levainHydro">Hydratacja levain [%]</label>
     <input type="number" id="levainHydro" step="1" min="0" />
 
-    <span>Mąka w levain [g]</span>
+    <span class="field-label">Mąka w levain [g]</span>
     <span class="output" id="levainFlourDisplay">–</span>
 
-    <span>Woda w levain [g]</span>
+    <span class="field-label">Woda w levain [g]</span>
     <span class="output" id="levainWaterDisplay">–</span>
   </div>
 </div>
@@ -266,13 +273,13 @@
     <label for="targetHydro">Docelowa hydratacja ciasta [%]</label>
     <input type="number" id="targetHydro" step="0.5" min="0" />
 
-    <span>Woda do dodania do ciasta [g]</span>
+    <span class="field-label">Woda do dodania do ciasta [g]</span>
     <span class="output" id="addedWaterDisplay">–</span>
 
-    <span>Całkowita mąka (mąki + gluten + mąka z levain) [g]</span>
+    <span class="field-label">Całkowita mąka (mąki + gluten + mąka z levain) [g]</span>
     <span class="output" id="totalFlourDisplay">–</span>
 
-    <span>Całkowita woda (w tym levain) [g]</span>
+    <span class="field-label">Całkowita woda (w tym levain) [g]</span>
     <span class="output" id="totalWaterDisplay">–</span>
   </div>
 </div>
