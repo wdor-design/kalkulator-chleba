@@ -35,16 +35,8 @@
       object-fit: contain;
     }
 
-    h1 {
-      font-size: 1.35rem;
-      margin: 0;
-    }
-
-    h2 {
-      font-size: 1.1rem;
-      margin-top: 1.2rem;
-      margin-bottom: 0.4rem;
-    }
+    h1 { font-size: 1.35rem; margin: 0; }
+    h2 { font-size: 1.1rem; margin-top: 1.2rem; margin-bottom: 0.4rem; }
 
     .section {
       border: 1px solid #ddd;
@@ -54,9 +46,7 @@
       background: #fff;
     }
 
-    label {
-      font-size: 0.86rem;
-    }
+    label { font-size: 0.86rem; }
 
     .field-label {
       font-size: 0.86rem;
@@ -75,7 +65,6 @@
       border-radius: 6px;
     }
 
-    /* Pola edytowalne */
     input:not([readonly]),
     textarea:not([readonly]) {
       background-color: #e6f4ff;
@@ -90,7 +79,6 @@
       outline: none;
     }
 
-    /* Pola readonly – szare */
     input[readonly] {
       background-color: #f5f5f5;
       border-color: #ddd;
@@ -128,20 +116,20 @@
       box-sizing: border-box;
     }
 
-    .btn:hover {
-      background: #e8e8e8;
-    }
+    .btn:hover { background: #e8e8e8; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-    .btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
+    /* Przyciski obok siebie (sekcja 6) */
+    .btn-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      margin-bottom: 0.6rem;
     }
-
-    /* wersja "inline" – bez pełnej szerokości (dla podsumowania) */
-    .btn-inline {
-      width: auto;
-      display: inline-block;
-      margin-right: 0.5rem;
+    .btn-row .btn {
+      flex: 1 1 0;
+      width: auto;     /* nadpisuje width:100% */
+      margin-top: 0;   /* bez schodka */
     }
 
     .output {
@@ -162,10 +150,7 @@
       max-width: 900px;
     }
 
-    .flour-header {
-      font-weight: 600;
-      margin-bottom: 0.3rem;
-    }
+    .flour-header { font-weight: 600; margin-bottom: 0.3rem; }
 
     .hint {
       font-size: 0.8rem;
@@ -173,12 +158,9 @@
       margin-bottom: 0.4rem;
     }
 
-    #recipeSummary {
-      min-height: 150px;
-      resize: vertical;
-    }
+    #recipeSummary { min-height: 150px; resize: vertical; }
 
-    /* "Komórka" jak input, ale z mniejszym fontem i możliwością łamania wierszy */
+    /* “Komórka” jak input, ale mniejszy font dla „Gluten witalny” */
     .cell-like {
       width: 100%;
       box-sizing: border-box;
@@ -188,7 +170,7 @@
       border-radius: 6px;
       background-color: #f5f5f5;
       line-height: 1.05;
-      height: calc(0.35rem + 0.35rem + 0.86rem + 2px); /* zbliżone do input */
+      height: calc(0.35rem + 0.35rem + 0.86rem + 2px);
       display: flex;
       align-items: center;
       white-space: normal;
@@ -197,7 +179,6 @@
 
     @media (max-width: 700px) {
       body { margin: 0.5rem; }
-      .btn-inline { width: 48%; margin-right: 0.4rem; }
     }
   </style>
 </head>
@@ -213,17 +194,16 @@
   <strong>Kalkulator zawartości glutenu i hydracji ciasta</strong>
 </div>
 
-<!-- 1. SUMA SUCHYCH -->
+<!-- 1 -->
 <div class="section">
-  <h2>1. Łączna masa mieszanki mąk</h2>
-
+  <h2>1. Masa bazowa</h2>
   <div class="grid">
-    <label for="totalDry">Masa mąki,na której opiera się przepis [g]</label>
+    <label for="totalDry">Masa mąki, na której opiera się przepis [g]</label>
     <input type="number" id="totalDry" step="1" min="0" />
   </div>
 </div>
 
-<!-- 2. KOMPOZYCJA MĄK -->
+<!-- 2 -->
 <div class="section">
   <h2>2. Kompozycja mąk</h2>
 
@@ -311,7 +291,7 @@
   </div>
 </div>
 
-<!-- 3. ZACZYN -->
+<!-- 3 -->
 <div class="section">
   <h2>3. Zaczyn (levain)</h2>
 
@@ -334,7 +314,7 @@
   </div>
 </div>
 
-<!-- 4. HYDRACJA CIASTA -->
+<!-- 4 -->
 <div class="section">
   <h2>4. Hydracja ciasta</h2>
 
@@ -353,7 +333,7 @@
   </div>
 </div>
 
-<!-- 5. SÓL -->
+<!-- 5 -->
 <div class="section">
   <h2>5. Sól</h2>
 
@@ -366,13 +346,13 @@
   </div>
 </div>
 
-<!-- 6. PODSUMOWANIE -->
+<!-- 6 -->
 <div class="section">
   <h2>6. Podsumowanie przepisu</h2>
 
-  <div>
-    <button class="btn btn-inline" type="button" onclick="generateRecipe()">ZAPISZ PRZEPIS</button>
-    <button class="btn btn-inline" type="button" onclick="clearFields()">WYCZYŚĆ POLA</button>
+  <div class="btn-row">
+    <button class="btn" type="button" onclick="generateRecipe()">ZAPISZ PRZEPIS</button>
+    <button class="btn" type="button" onclick="clearFields()">WYCZYŚĆ POLA</button>
   </div>
 
   <textarea id="recipeSummary" readonly placeholder="Tutaj pojawi się podsumowanie przepisu..."></textarea>
@@ -434,7 +414,7 @@ function updateFlourVisibility() {
   if (btn) btn.disabled = flourCount >= MAX_FLOURS;
 }
 
-/* AUTOSAVE (LOCALSTORAGE) */
+/* AUTOSAVE */
 const fieldsToSave = [
   "totalDry",
   "saltPct",
@@ -445,7 +425,7 @@ const fieldsToSave = [
   "levain","levainHydro",
   "targetHydro",
   "addedWater"
-  // salt (g) jest wyliczany, nie zapisujemy
+  // salt jest wyliczane
 ];
 
 function restoreFields() {
@@ -492,7 +472,6 @@ function recalc() {
   const gG = Gprod * 0.8;
   setValue("gG", gG);
 
-  // Sumy i gluten z mąk 1..5
   let totalFlourBlend = 0;
   let sumFlourGluten = 0;
 
@@ -507,7 +486,7 @@ function recalc() {
     setValue("g" + i, gi);
   }
 
-  // Udziały procentowe liczymy TYLKO dla mąk (1..5)
+  // Udziały procentowe tylko dla mąk (1..5)
   if (totalFlourBlend > 0) {
     for (let i = 1; i <= MAX_FLOURS; i++) {
       const mi = num("m" + i);
@@ -519,7 +498,7 @@ function recalc() {
     }
   }
 
-  // "Łączna masa mąki [g]*" = mąki + gluten
+  // "Łączna masa mąki [g]" = mąki + gluten
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
   const glutenPct = sumDry > 0 ? (sumGluten / sumDry * 100) : NaN;
@@ -575,7 +554,7 @@ function recalc() {
 
   hydroSync = false;
 
-  // Sól: % z łącznej masy mieszanki mąk (łącznie z glutenem)
+  // Sól: % z "totalDry"
   const T = num("totalDry");
   const saltPct = num("saltPct");
   const salt = (T > 0 && saltPct > 0) ? (T * saltPct / 100) : NaN;
@@ -600,7 +579,7 @@ function scaleFlours() {
   const G = num("glutenProd");
 
   if (T <= 0) {
-    alert("Najpierw ustaw łączną masę mieszanki.");
+    alert("Najpierw ustaw masę bazową w sekcji 1.");
     return;
   }
 
@@ -615,7 +594,7 @@ function scaleFlours() {
   // Gluten zostaje bez zmian
   const flourTarget = T - G;
   if (flourTarget < 0) {
-    alert("Nie można przeskalować — ilość glutenu przekracza masę docelową mieszanki.");
+    alert("Nie można przeskalować — ilość glutenu przekracza masę docelową.");
     return;
   }
 
@@ -705,7 +684,7 @@ function generateRecipe() {
   lines.push("PRZEPIS – chleb na zakwasie\n");
 
   if (totalDry > 0)
-    lines.push("Łączna masa mieszanki mąk (z glutenem): " + totalDry.toFixed(1) + " g\n");
+    lines.push("Masa mąki, na której opiera się przepis: " + totalDry.toFixed(1) + " g\n");
 
   lines.push("Kompozycja mąk:");
   for (let i = 1; i <= MAX_FLOURS; i++) {
@@ -734,7 +713,7 @@ function generateRecipe() {
   if (addedWater > 0) lines.push("- Woda do dodania: " + addedWater.toFixed(1) + " g");
 
   lines.push("\nSól:");
-  if (salt > 0 && saltPct > 0) lines.push(`- Dodatek soli (${saltPct.toFixed(1)}% wagi mąki): ${salt.toFixed(1)} g`);
+  if (salt > 0 && saltPct > 0) lines.push(`- Dodatek soli (${saltPct.toFixed(1)}%): ${salt.toFixed(1)} g`);
 
   document.getElementById("recipeSummary").value = lines.join("\n");
 }
