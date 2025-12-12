@@ -124,6 +124,8 @@
       cursor: pointer;
       text-align: center;
       white-space: normal;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .btn:hover {
@@ -169,6 +171,23 @@
       resize: vertical;
     }
 
+    /* "Komórka" jak input, ale z mniejszym fontem i możliwością łamania wierszy */
+    .cell-like {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.72rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #f5f5f5;
+      line-height: 1.05;
+      height: calc(0.35rem + 0.35rem + 0.86rem + 2px); /* zbliżone do input */
+      display: flex;
+      align-items: center;
+      white-space: normal;
+      overflow: hidden;
+    }
+
     @media (max-width: 700px) {
       body { margin: 0.5rem; }
     }
@@ -196,13 +215,12 @@
   </div>
 </div>
 
-<!-- 2. KOMPOZYCJA MIESZANKI (Z GLUTENEM + PODSUMOWANIA) -->
+<!-- 2. KOMPOZYCJA MĄK -->
 <div class="section">
-  <h2>2. Kompozycja mieszanki mąk</h2>
+  <h2>2. Kompozycja mąk</h2>
 
   <p class="hint">
     Jeśli łączna masa różni się od podanej powyżej masy docelowej, użyj przycisku „Przeskaluj”, aby automatycznie dostosować ilości mąk.
-    <br><strong>UWAGA:</strong> nie skaluj ilości glutenu — podana ilość dodanego glutenu się nie zmienia po naciśnięciu przycisku.
   </p>
 
   <div class="flour-row flour-header">
@@ -212,8 +230,6 @@
     <div class="field-label">Białko [g/100 g]</div>
     <div class="field-label">Gluten z mąki [g]</div>
   </div>
-
-  <button class="btn" id="addFlourBtn" type="button">Dodaj kolejną mąkę (max 5)</button>
 
   <div class="flour-row" id="flourRow1">
     <input type="text" id="flourName1" placeholder="np. T110" />
@@ -258,16 +274,22 @@
 
   <!-- Gluten (zawsze na dole) -->
   <div class="flour-row" id="glutenRow">
-    <input type="text" id="flourNameG" value="Gluten witalny" readonly />
+    <div class="cell-like" aria-label="Typ">Gluten<br>witalny</div>
     <input type="number" id="glutenProd" step="0.5" min="0" />
     <input type="text" id="pctG" value="—" readonly />
     <input type="number" id="pG" value="80" readonly />
     <input type="number" id="gG" readonly />
   </div>
 
+  <!-- Przycisk dodawania mąki (pod tabelą, po prawej) -->
+  <div class="grid" style="margin-top:0.2rem; margin-bottom:0.4rem;">
+    <span></span>
+    <button class="btn" id="addFlourBtn" type="button">Dodaj kolejną mąkę (max 5)</button>
+  </div>
+
   <!-- Podsumowania -->
-  <div class="grid" style="margin-top:0.6rem;">
-    <span class="field-label">Łączna masa mąki i dodanego glutenu [g]</span>
+  <div class="grid" style="margin-top:0.2rem;">
+    <span class="field-label">Łączna masa mąki [g]*</span>
     <span class="output" id="sumDryDisplay">–</span>
 
     <span></span>
@@ -334,10 +356,6 @@
     <label for="salt">Dodatek soli [g]</label>
     <input type="number" id="salt" readonly />
   </div>
-
-  <p class="hint" style="margin-top:0.4rem;">
-    Sól jest liczona jako <strong>% × łączna masa mieszanki mąk</strong> (sekcja 1).
-  </p>
 </div>
 
 <!-- 6. PODSUMOWANIE -->
@@ -491,6 +509,7 @@ function recalc() {
     }
   }
 
+  // "Łączna masa mąki [g]*" = mąki + gluten (jak wcześniej sumDry)
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
   const glutenPct = sumDry > 0 ? (sumGluten / sumDry * 100) : NaN;
@@ -583,7 +602,7 @@ function scaleFlours() {
     return;
   }
 
-  // UWAGA: NIE skalujemy glutenu — gluten zostaje taki sam
+  // Gluten zostaje bez zmian
   const flourTarget = T - G;
   if (flourTarget < 0) {
     alert("Nie można przeskalować — ilość glutenu przekracza masę docelową mieszanki.");
@@ -623,7 +642,7 @@ function clearFields() {
     if (el) el.value = "";
   });
 
-  // Domyślnie 2% po resecie
+  // Domyślne 2% po resecie
   const saltPctEl = document.getElementById("saltPct");
   if (saltPctEl) saltPctEl.value = "2";
 
@@ -688,7 +707,7 @@ function generateRecipe() {
   if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
 
   lines.push("\nZawartość glutenu:");
-  if (sumDryText !== "–") lines.push("- Łączna masa mąki i dodanego glutenu: " + sumDryText + " g");
+  if (sumDryText !== "–") lines.push("- Łączna masa mąki: " + sumDryText + " g");
   if (sumGlutenText !== "–") lines.push("- Zawartość glutenu w mieszance: " + sumGlutenText + " g");
   if (glutenPctText !== "–") lines.push("- Zawartość glutenu [%]: " + glutenPctText + "%");
 
