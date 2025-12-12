@@ -4,6 +4,7 @@ const URLS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
+  './bread-icon.png',
   './icon-192.png',
   './icon-512.png'
 ];
