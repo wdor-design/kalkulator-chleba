@@ -80,9 +80,9 @@
 
     .grid {
       display: grid;
-      /* opis po lewej, pole po prawej – prawa kolumna ok. 200px */
-      grid-template-columns: 1.6fr 200px;
-      gap: 0.3rem 1rem; /* większy odstęp między nazwą pola a polem */
+      /* opis po lewej, pole po prawej – prawa kolumna 170px */
+      grid-template-columns: 1.6fr 170px;
+      gap: 0.3rem 1rem; /* większy odstęp między tekstem a polem */
       max-width: 650px;
       align-items: center;
     }
@@ -90,7 +90,7 @@
     .grid input[type="number"],
     .grid input[type="text"],
     .grid .output {
-      width: 100%;          /* wszystkie pola (niebieskie + szare) tej samej szerokości */
+      width: 100%;
       justify-self: start;
       display: block;
       box-sizing: border-box;
@@ -166,7 +166,7 @@
 
   <div class="grid">
     <label for="totalDry">Łączna masa mąki i glutenu (jeśli jest suplementowany) [g]</label>
-    <input type="number" id="totalDry" step="1" min="0" oninput="updateScaleButton(); recalc();" />
+    <input type="number" id="totalDry" step="1" min="0" />
   </div>
 </div>
 
@@ -183,26 +183,26 @@
   </div>
 
   <div class="flour-row">
-    <input type="text" id="flourName1" placeholder="np. T110" oninput="recalc()" />
-    <input type="number" id="m1" step="1" min="0" oninput="recalc()" />
+    <input type="text" id="flourName1" placeholder="np. T110" />
+    <input type="number" id="m1" step="1" min="0" />
     <input type="number" id="pct1" readonly />
-    <input type="number" id="p1" step="0.1" min="0" oninput="recalc()" />
+    <input type="number" id="p1" step="0.1" min="0" />
     <input type="number" id="g1" readonly />
   </div>
 
   <div class="flour-row">
-    <input type="text" id="flourName2" placeholder="np. T80 ancient" oninput="recalc()" />
-    <input type="number" id="m2" step="1" min="0" oninput="recalc()" />
+    <input type="text" id="flourName2" placeholder="np. T80 ancient" />
+    <input type="number" id="m2" step="1" min="0" />
     <input type="number" id="pct2" readonly />
-    <input type="number" id="p2" step="0.1" min="0" oninput="recalc()" />
+    <input type="number" id="p2" step="0.1" min="0" />
     <input type="number" id="g2" readonly />
   </div>
 
   <div class="flour-row">
-    <input type="text" id="flourName3" placeholder="np. T65" oninput="recalc()" />
-    <input type="number" id="m3" step="1" min="0" oninput="recalc()" />
+    <input type="text" id="flourName3" placeholder="np. T65" />
+    <input type="number" id="m3" step="1" min="0" />
     <input type="number" id="pct3" readonly />
-    <input type="number" id="p3" step="0.1" min="0" oninput="recalc()" />
+    <input type="number" id="p3" step="0.1" min="0" />
     <input type="number" id="g3" readonly />
   </div>
 </div>
@@ -217,13 +217,13 @@
 
   <div class="grid">
     <label for="glutenProd">Dodany gluten witalny (80%) [g]</label>
-    <input type="number" id="glutenProd" step="0.5" min="0" oninput="recalc()" />
+    <input type="number" id="glutenProd" step="0.5" min="0" />
 
     <span>Łączna masa mąki i dodanego glutenu [g]</span>
     <span class="output" id="sumDryDisplay">–</span>
 
     <span></span>
-    <button class="btn" id="scaleBtn" onclick="scaleFlours()">
+    <button class="btn" id="scaleBtn">
       Przeskaluj
     </button>
 
@@ -245,10 +245,10 @@
 
   <div class="grid">
     <label for="levain">Levain / zakwas [g]</label>
-    <input type="number" id="levain" step="1" min="0" oninput="recalc()" />
+    <input type="number" id="levain" step="1" min="0" />
 
     <label for="levainHydro">Hydratacja levain [%]</label>
-    <input type="number" id="levainHydro" step="1" min="0" oninput="recalc()" />
+    <input type="number" id="levainHydro" step="1" min="0" />
 
     <span>Mąka w levain [g]</span>
     <span class="output" id="levainFlourDisplay">–</span>
@@ -264,7 +264,7 @@
 
   <div class="grid">
     <label for="targetHydro">Docelowa hydratacja ciasta [%]</label>
-    <input type="number" id="targetHydro" step="0.5" min="0" oninput="recalc()" />
+    <input type="number" id="targetHydro" step="0.5" min="0" />
 
     <span>Woda do dodania do ciasta [g]</span>
     <span class="output" id="addedWaterDisplay">–</span>
@@ -311,6 +311,44 @@ function setText(id, val, decimals = 1) {
   } else {
     el.textContent = "–";
   }
+}
+
+/* ZAPIS / ODCZYT USTAWIEŃ (LOCALSTORAGE) */
+const fieldsToSave = [
+  "totalDry",
+  "flourName1","flourName2","flourName3",
+  "m1","m2","m3",
+  "p1","p2","p3",
+  "glutenProd",
+  "levain","levainHydro",
+  "targetHydro"
+];
+
+function restoreFields() {
+  fieldsToSave.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const saved = localStorage.getItem("chleb_" + id);
+    if (saved !== null) el.value = saved;
+  });
+}
+
+function setupAutosave() {
+  fieldsToSave.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      localStorage.setItem("chleb_" + id, el.value);
+      recalc();
+      updateScaleButton();
+    });
+  });
+}
+
+function clearStoredFields() {
+  fieldsToSave.forEach(id => {
+    localStorage.removeItem("chleb_" + id);
+  });
 }
 
 /* OBLICZENIA */
@@ -377,6 +415,7 @@ function recalc() {
 function updateScaleButton() {
   const T = num("totalDry");
   const btn = document.getElementById("scaleBtn");
+  if (!btn) return;
   btn.textContent = T > 0
     ? `Przeskaluj do zamierzonej masy ${T} g`
     : "Przeskaluj";
@@ -416,6 +455,8 @@ function scaleFlours() {
 
 /* RESET */
 function clearFields() {
+  clearStoredFields();
+
   [
     "totalDry", "flourName1", "flourName2", "flourName3",
     "m1","m2","m3","p1","p2","p3",
@@ -443,7 +484,6 @@ function clearFields() {
   if (summary) summary.value = "";
 
   updateScaleButton();
-  recalc();
 }
 
 /* PRZEPIS */
@@ -511,8 +551,13 @@ if ("serviceWorker" in navigator) {
 }
 
 /* INIT */
-updateScaleButton();
+restoreFields();
+setupAutosave();
 recalc();
+updateScaleButton();
+
+/* Podpięcie kliknięcia skali (po restore, żeby element na pewno istniał) */
+document.getElementById("scaleBtn").addEventListener("click", scaleFlours);
 </script>
 
 </body>
