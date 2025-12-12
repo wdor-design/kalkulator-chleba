@@ -56,23 +56,26 @@
       border-radius: 6px;
     }
 
+    /* Pola edytowalne */
     input:not([readonly]),
     textarea:not([readonly]) {
       background-color: #e6f4ff;
-      transition: 0.15s;
+      transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
     }
 
     input:not([readonly]):focus,
     textarea:not([readonly]):focus {
       background-color: #d8eeff;
       box-shadow: 0 0 0 2px #99cfff;
-      outline: none;
       border-color: #66aef5;
+      outline: none;
     }
 
+    /* Pola readonly – szare */
     input[readonly] {
       background-color: #f5f5f5;
       border-color: #ddd;
+      cursor: default;
     }
 
     .grid {
@@ -108,6 +111,7 @@
       min-height: 1.8rem;
     }
 
+    /* Tabela mąk */
     .flour-row {
       display: grid;
       grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr 0.9fr;
@@ -132,6 +136,7 @@
       resize: vertical;
     }
 
+    /* Prosta responsywność – NIE ruszamy tabeli mąk */
     @media (max-width: 700px) {
       body {
         margin: 0.5rem;
@@ -139,20 +144,14 @@
 
       .grid {
         grid-template-columns: 1fr;
-      }
-
-      .flour-row {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .flour-header {
-        display: none;
+        max-width: 100%;
       }
     }
   </style>
 </head>
 
 <body>
+
 <h1>Chleb na zakwasie</h1>
 <div style="font-size: 0.95rem; color:#444; margin-bottom:1rem;">
   <strong>Kalkulator zawartości glutenu i hydratacji ciasta</strong>
@@ -161,6 +160,7 @@
 <!-- 1. SUMA SUCHYCH -->
 <div class="section">
   <h2>1. Łączna masa mąki i glutenu</h2>
+
   <div class="grid">
     <label for="totalDry">Łączna masa mąki i glutenu (jeśli jest suplementowany) [g]</label>
     <input type="number" id="totalDry" step="1" min="0" oninput="updateScaleButton(); recalc();" />
@@ -288,55 +288,63 @@
 <script>
 /* HELPERY */
 function num(id) {
-  let el = document.getElementById(id);
-  let v = parseFloat((el.value || "").replace(",", "."));
+  const el = document.getElementById(id);
+  const v = parseFloat((el.value || "").replace(",", "."));
   return isNaN(v) ? 0 : v;
 }
 
 function setValue(id, val, decimals = 1) {
-  let el = document.getElementById(id);
-  el.value = (!isNaN(val)) ? val.toFixed(decimals) : "";
+  const el = document.getElementById(id);
+  if (typeof val === "number" && !isNaN(val)) {
+    el.value = val.toFixed(decimals);
+  } else {
+    el.value = "";
+  }
 }
 
 function setText(id, val, decimals = 1) {
-  document.getElementById(id).textContent =
-    (!isNaN(val)) ? val.toFixed(decimals) : "–";
+  const el = document.getElementById(id);
+  if (typeof val === "number" && !isNaN(val)) {
+    el.textContent = val.toFixed(decimals);
+  } else {
+    el.textContent = "–";
+  }
 }
 
 /* OBLICZENIA */
 function recalc() {
-  let m1 = num("m1"), m2 = num("m2"), m3 = num("m3");
-  let p1 = num("p1"), p2 = num("p2"), p3 = num("p3");
-  let Gprod = num("glutenProd");
+  const m1 = num("m1"), m2 = num("m2"), m3 = num("m3");
+  const p1 = num("p1"), p2 = num("p2"), p3 = num("p3");
+  const Gprod = num("glutenProd");
 
-  let g1 = m1 * p1 / 100;
-  let g2 = m2 * p2 / 100;
-  let g3 = m3 * p3 / 100;
+  const g1 = m1 * p1 / 100;
+  const g2 = m2 * p2 / 100;
+  const g3 = m3 * p3 / 100;
 
   setValue("g1", g1);
   setValue("g2", g2);
   setValue("g3", g3);
 
-  let totalFlourBlend = m1 + m2 + m3;
+  const totalFlourBlend = m1 + m2 + m3;
   if (totalFlourBlend > 0) {
-    setValue("pct1", m1 / totalFlourBlend * 100);
-    setValue("pct2", m2 / totalFlourBlend * 100);
-    setValue("pct3", m3 / totalFlourBlend * 100);
+    setValue("pct1", m1 / totalFlourBlend * 100, 1);
+    setValue("pct2", m2 / totalFlourBlend * 100, 1);
+    setValue("pct3", m3 / totalFlourBlend * 100, 1);
   } else {
     setValue("pct1", "");
     setValue("pct2", "");
     setValue("pct3", "");
   }
 
-  let sumDry = totalFlourBlend + Gprod;
-  let sumGluten = g1 + g2 + g3 + Gprod * 0.8;
-  let glutenPct = sumDry > 0 ? (sumGluten / sumDry * 100) : NaN;
+  const sumDry = totalFlourBlend + Gprod;
+  const sumGluten = g1 + g2 + g3 + Gprod * 0.8;
+  const glutenPct = sumDry > 0 ? (sumGluten / sumDry * 100) : NaN;
 
   setText("sumDryDisplay", sumDry);
   setText("sumGlutenDisplay", sumGluten);
   setText("glutenPercentDisplay", glutenPct, 2);
 
-  let L = num("levain"), Lh = num("levainHydro");
+  const L = num("levain"), Lh = num("levainHydro");
   let levFlour = 0, levWater = 0;
 
   if (L > 0 && Lh > 0) {
@@ -347,11 +355,16 @@ function recalc() {
   setText("levainFlourDisplay", levFlour);
   setText("levainWaterDisplay", levWater);
 
-  let totalFlour = sumDry + levFlour;
-  let targetH = num("targetHydro");
+  const totalFlour = sumDry + levFlour;
+  const targetH = num("targetHydro");
 
-  let totalWater = totalFlour * targetH / 100;
-  let addedWater = totalWater - levWater;
+  const totalWater = (!isNaN(targetH) && targetH > 0)
+    ? totalFlour * targetH / 100
+    : NaN;
+
+  const addedWater = (!isNaN(totalWater))
+    ? Math.max(0, totalWater - levWater)
+    : NaN;
 
   setText("totalFlourDisplay", totalFlour);
   setText("totalWaterDisplay", totalWater);
@@ -360,26 +373,37 @@ function recalc() {
 
 /* SKALOWANIE */
 function updateScaleButton() {
-  let T = num("totalDry");
-  document.getElementById("scaleBtn").textContent =
-    T > 0 ? `Przeskaluj do zamierzonej masy ${T} g` : "Przeskaluj";
+  const T = num("totalDry");
+  const btn = document.getElementById("scaleBtn");
+  btn.textContent = T > 0
+    ? `Przeskaluj do zamierzonej masy ${T} g`
+    : "Przeskaluj";
 }
 
 function scaleFlours() {
-  let T = num("totalDry");
-  let G = num("glutenProd");
+  const T = num("totalDry");
+  const G = num("glutenProd");
 
-  if (T <= 0) return alert("Najpierw ustaw łączną masę mąki i glutenu.");
+  if (T <= 0) {
+    alert("Najpierw ustaw łączną masę mąki i glutenu.");
+    return;
+  }
 
-  let m1 = num("m1"), m2 = num("m2"), m3 = num("m3");
-  let sum = m1 + m2 + m3;
+  const m1 = num("m1"), m2 = num("m2"), m3 = num("m3");
+  const F = m1 + m2 + m3;
 
-  if (sum <= 0) return alert("Najpierw wpisz ilości mąk.");
+  if (F <= 0) {
+    alert("Najpierw wpisz ilości mąk.");
+    return;
+  }
 
-  let targetFlour = T - G;
-  if (targetFlour < 0) return alert("Za dużo glutenu.");
+  const flourTarget = T - G;
+  if (flourTarget < 0) {
+    alert("Glutenu jest więcej niż masa docelowa! Zmniejsz gluten lub zwiększ masę.");
+    return;
+  }
 
-  let k = targetFlour / sum;
+  const k = flourTarget / F;
 
   setValue("m1", m1 * k);
   setValue("m2", m2 * k);
@@ -391,79 +415,103 @@ function scaleFlours() {
 /* RESET */
 function clearFields() {
   [
-    "totalDry","flourName1","flourName2","flourName3",
+    "totalDry", "flourName1", "flourName2", "flourName3",
     "m1","m2","m3","p1","p2","p3",
     "glutenProd","levain","levainHydro","targetHydro"
-  ].forEach(id => document.getElementById(id).value = "");
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
 
-  ["pct1","pct2","pct3","g1","g2","g3"].forEach(id =>
-    document.getElementById(id).value = ""
-  );
+  ["pct1","pct2","pct3","g1","g2","g3"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
 
   [
     "sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
     "levainFlourDisplay","levainWaterDisplay",
     "totalFlourDisplay","totalWaterDisplay","addedWaterDisplay"
-  ].forEach(id => document.getElementById(id).textContent = "–");
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = "–";
+  });
 
-  document.getElementById("recipeSummary").value = "";
+  const summary = document.getElementById("recipeSummary");
+  if (summary) summary.value = "";
+
   updateScaleButton();
   recalc();
 }
 
 /* PRZEPIS */
 function generateRecipe() {
-  let lines = [];
+  const lines = [];
+
+  const totalDry = num("totalDry");
+  const m1 = num("m1"), m2 = num("m2"), m3 = num("m3");
+  const p1 = num("p1"), p2 = num("p2"), p3 = num("p3");
+  const G = num("glutenProd");
+  const L = num("levain");
+  const Lh = num("levainHydro");
+  const targetHydro = num("targetHydro");
+
+  const fn1 = document.getElementById("flourName1").value || "Mąka 1";
+  const fn2 = document.getElementById("flourName2").value || "Mąka 2";
+  const fn3 = document.getElementById("flourName3").value || "Mąka 3";
+
+  const sumDryText = document.getElementById("sumDryDisplay").textContent;
+  const sumGlutenText = document.getElementById("sumGlutenDisplay").textContent;
+  const glutenPctText = document.getElementById("glutenPercentDisplay").textContent;
+  const levFlourText = document.getElementById("levainFlourDisplay").textContent;
+  const levWaterText = document.getElementById("levainWaterDisplay").textContent;
+  const totalFlourText = document.getElementById("totalFlourDisplay").textContent;
+  const totalWaterText = document.getElementById("totalWaterDisplay").textContent;
+  const addedWaterText = document.getElementById("addedWaterDisplay").textContent;
+
   lines.push("PRZEPIS – chleb na zakwasie\n");
 
-  let totalDry = num("totalDry");
-  if (totalDry) lines.push(`Łączna masa mąki i glutenu: ${totalDry} g\n`);
-
-  let fn1 = flourName1.value || "Mąka 1";
-  let fn2 = flourName2.value || "Mąka 2";
-  let fn3 = flourName3.value || "Mąka 3";
-
-  let m1 = num("m1"), m2 = num("m2"), m3 = num("m3");
-  let p1 = num("p1"), p2 = num("p2"), p3 = num("p3");
-  let G = num("glutenProd");
+  if (totalDry > 0)
+    lines.push("Łączna masa mąki i glutenu: " + totalDry.toFixed(1) + " g\n");
 
   lines.push("Kompozycja mąk:");
-  if (m1>0) lines.push(`- ${fn1}: ${m1} g (${p1} g białka / 100g)`);
-  if (m2>0) lines.push(`- ${fn2}: ${m2} g (${p2} g białka / 100g)`);
-  if (m3>0) lines.push(`- ${fn3}: ${m3} g (${p3} g białka / 100g)`);
-  if (G>0) lines.push(`- Gluten witalny (80%): ${G} g`);
+  if (m1 > 0) lines.push(`- ${fn1}: ${m1.toFixed(1)} g (${p1.toFixed(1)} g białka / 100g)`);
+  if (m2 > 0) lines.push(`- ${fn2}: ${m2.toFixed(1)} g (${p2.toFixed(1)} g białka / 100g)`);
+  if (m3 > 0) lines.push(`- ${fn3}: ${m3.toFixed(1)} g (${p3.toFixed(1)} g białka / 100g)`);
+  if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
 
   lines.push("\nZawartość glutenu:");
-  lines.push("- Łączna masa mąki i glutenu: " + sumDryDisplay.textContent + " g");
-  lines.push("- Zawartość glutenu: " + sumGlutenDisplay.textContent + " g");
-  lines.push("- Zawartość procentowa: " + glutenPercentDisplay.textContent + " %");
+  if (sumDryText !== "–") lines.push("- Łączna masa mąki i dodanego glutenu: " + sumDryText + " g");
+  if (sumGlutenText !== "–") lines.push("- Zawartość glutenu w mieszance: " + sumGlutenText + " g");
+  if (glutenPctText !== "–") lines.push("- Procentowa zawartość glutenu: " + glutenPctText + "%");
 
-  lines.push("\nLevain:");
-  lines.push("- Ilość: " + levain.value + " g");
-  lines.push("- Hydratacja: " + levainHydro.value + " %");
-  lines.push("- Mąka w levain: " + levainFlourDisplay.textContent + " g");
-  lines.push("- Woda w levain: " + levainWaterDisplay.textContent + " g");
+  lines.push("\nZakwas / levain:");
+  if (L > 0) lines.push("- Ilość levain: " + L.toFixed(1) + " g");
+  if (Lh > 0) lines.push("- Hydratacja levain: " + Lh.toFixed(1) + "%");
+  if (levFlourText !== "–") lines.push("- Mąka w levain: " + levFlourText + " g");
+  if (levWaterText !== "–") lines.push("- Woda w levain: " + levWaterText + " g");
 
   lines.push("\nHydratacja ciasta:");
-  lines.push("- Docelowa hydratacja: " + targetHydro.value + " %");
-  lines.push("- Całkowita mąka: " + totalFlourDisplay.textContent + " g");
-  lines.push("- Całkowita woda: " + totalWaterDisplay.textContent + " g");
-  lines.push("- Woda do dodania: " + addedWaterDisplay.textContent + " g");
+  if (targetHydro > 0) lines.push("- Docelowa hydratacja: " + targetHydro.toFixed(1) + "%");
+  if (totalFlourText !== "–") lines.push("- Całkowita mąka: " + totalFlourText + " g");
+  if (totalWaterText !== "–") lines.push("- Całkowita woda: " + totalWaterText + " g");
+  if (addedWaterText !== "–") lines.push("- Woda do dodania: " + addedWaterText + " g");
 
-  recipeSummary.value = lines.join("\n");
+  document.getElementById("recipeSummary").value = lines.join("\n");
 }
 
 /* SERVICE WORKER */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("service-worker.js")
+      .catch(err => console.error("SW registration failed:", err));
   });
 }
 
 /* INIT */
 updateScaleButton();
 recalc();
-
 </script>
+
 </body>
 </html>
