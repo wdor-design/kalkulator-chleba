@@ -272,7 +272,6 @@
       <input type="number" id="m1" step="1" min="0" />
       <input type="number" id="pct1" step="0.1" min="0" max="100" />
       <input type="number" id="p1" step="0.1" min="0" />
-      <!-- g1 jako text żeby móc pokazać "—" -->
       <input type="text" id="g1" readonly />
     </div>
 
@@ -292,7 +291,6 @@
       <input type="text" id="g3" readonly />
     </div>
 
-    <!-- Dynamiczne wiersze 4 i 5 -->
     <div class="flour-row" id="flourRow4" style="display:none;">
       <input type="text" id="flourName4" placeholder="np. T150" />
       <input type="number" id="m4" step="1" min="0" />
@@ -309,7 +307,7 @@
       <input type="text" id="g5" readonly />
     </div>
 
-    <!-- Żytnia (stały wiersz) -->
+    <!-- Żytnia -->
     <div class="flour-row" id="ryeRow">
       <div class="fake-input gluten-name">Mąka<br>żytnia</div>
       <input type="number" id="mR" step="1" min="0" />
@@ -318,29 +316,24 @@
       <input type="text" id="gR" value="—" readonly />
     </div>
 
-    <!-- Gluten (zawsze na dole) -->
+    <!-- Gluten -->
     <div class="flour-row" id="glutenRow">
       <div class="fake-input gluten-name">Gluten<br>witalny</div>
-      <!-- startowo PUSTE -->
       <input type="number" id="glutenProd" step="0.5" min="0" />
       <input type="text" id="pctG" value="—" readonly />
       <input type="number" id="pG" value="80" readonly />
-      <!-- gG jako text żeby móc pokazać "—" -->
       <input type="text" id="gG" readonly />
     </div>
 
-  </div><!-- /.flour-table -->
+  </div>
 
-  <!-- Komunikaty -->
   <div id="percentWarning"></div>
 
-  <!-- Przycisk dodawania mąki -->
   <div class="grid" style="margin-top: var(--v-gap);">
     <span></span>
     <button class="btn" id="addFlourBtn" type="button">Dodaj kolejną mąkę (max 5)</button>
   </div>
 
-  <!-- Podsumowania -->
   <div class="grid" style="margin-top: var(--v-gap);">
     <span class="field-label">Łączna masa mąki [g]</span>
     <div>
@@ -407,7 +400,6 @@
     <input type="number" id="saltPct" step="0.1" min="0" />
 
     <label for="salt">Dodatek soli [g]</label>
-    <!-- zmienione na text, żeby pokazać "—" -->
     <input type="text" id="salt" readonly value="—" />
   </div>
 </div>
@@ -453,7 +445,6 @@ function setUserValue(id, val, decimals = 1) {
   else el.value = "";
 }
 
-/* Setter do pól WYJŚCIOWYCH (input text readonly) z myślnikiem */
 function setOut(id, val, decimals = 1) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -462,19 +453,45 @@ function setOut(id, val, decimals = 1) {
   else el.value = DASH;
 }
 
-/* (może zostać – nie szkodzi) */
-function clearZeroOnFocus(el) {
-  if (!el || el.readOnly) return;
+/* Auto-nazwa tylko gdy zaczynamy wpisywać liczby, a typ pusty */
+function ensureDefaultName(i) {
+  const nameEl = document.getElementById("flourName" + i);
+  if (!nameEl) return;
+  if ((nameEl.value || "").trim() === "") {
+    nameEl.value = `Mąka ${i}`;
+    localStorage.setItem("chleb_flourName" + i, nameEl.value);
+  }
+}
 
-  el.addEventListener("focus", () => {
-    const raw = (el.value || "").trim();
-    if (raw === "") return;
+/* Czy wiersz ma jakiekolwiek wartości liczbowe? */
+function rowHasAnyValues(i) {
+  const m = (document.getElementById("m" + i)?.value || "").trim();
+  const pct = (document.getElementById("pct" + i)?.value || "").trim();
+  const p = (document.getElementById("p" + i)?.value || "").trim();
+  return (m !== "" || pct !== "" || p !== "");
+}
 
-    const v = parseFloat(raw.replace(",", "."));
-    if (!isNaN(v) && Math.abs(v) < 1e-12) {
-      el.value = "";
-    }
-  });
+/* Czyści cały wiersz mąki (1..5) */
+function clearFlourRow(i) {
+  const mEl = document.getElementById("m" + i);
+  const pctEl = document.getElementById("pct" + i);
+  const pEl = document.getElementById("p" + i);
+  const gEl = document.getElementById("g" + i);
+  const nameEl = document.getElementById("flourName" + i);
+
+  percentSync = true;
+  if (mEl) mEl.value = "";
+  if (pctEl) pctEl.value = "";
+  if (pEl) pEl.value = "";
+  percentSync = false;
+
+  if (gEl) gEl.value = DASH;
+  if (nameEl) {
+    nameEl.value = "";
+    localStorage.setItem("chleb_flourName" + i, "");
+  }
+
+  recalc();
 }
 
 /* DWUKIERUNKOWA HYDRACJA */
@@ -583,7 +600,7 @@ function updateMissingFlourWarning(totalFlourBlend) {
   }
 }
 
-/* Masa docelowa mąk BEZ glutenu (bo gluten się nie skaluje) */
+/* Masa docelowa mąk BEZ glutenu */
 function flourTargetMass() {
   const T = num("totalDry");
   const G = num("glutenProd");
@@ -658,10 +675,7 @@ function pctFromGrams(k) {
   percentSync = false;
 }
 
-/* NOWE: zachowanie przy zmianie masy bazowej / glutenu
-   - jeśli są gramy -> gramy zostają, przeliczamy tylko %
-   - jeśli nie ma gramów, ale są % -> licz gramy z %
-*/
+/* NOWE: zachowanie przy zmianie masy bazowej / glutenu */
 function syncRowOnBaseChange(k) {
   const mEl = document.getElementById(mId(k));
   const pctEl = document.getElementById(pctId(k));
@@ -680,7 +694,7 @@ function syncRowOnBaseChange(k) {
   }
 }
 
-/* Zerowanie pozostałych (czyści także białko) */
+/* Zerowanie pozostałych (czyści tylko gramy/% + białko jak wcześniej przy 100%) */
 function zeroOthers(lockedKey) {
   for (const k of activeKeys()) {
     if (k === lockedKey) continue;
@@ -726,16 +740,15 @@ function normalizePercents(lockedKey) {
   showScaleMessage("Przeskalowano wartości do 100%");
 }
 
-/* Skalowanie gramów mąk do masy bazowej (gluten się nie skaluje) */
+/* Skalowanie gramów mąk do masy bazowej */
 function normalizeGrams(lockedKey) {
-  const target = flourTargetMass(); // T - G
+  const target = flourTargetMass();
   if (target <= 0) return;
 
   const keys = activeKeys();
   let total = 0;
   for (const k of keys) total += num(mId(k));
 
-  // skalujemy tylko gdy przekroczony target
   if (total <= target + 1e-9) return;
 
   const lockedG = num(mId(lockedKey));
@@ -760,18 +773,15 @@ function normalizeGrams(lockedKey) {
 function recalc() {
   const T = num("totalDry");
 
-  // gluten witalny
   const Gprod = num("glutenProd");
   const gG = Gprod * 0.8;
 
-  // kolumny gX / gG: przed masą bazową -> "—", po masie bazowej -> 0,0 / wartości
   if (T > 0) setOut("gG", gG, 1);
   else setOut("gG", NaN);
 
-  let totalFlourBlend = 0; // mąki (w tym żytnia), bez glutenu witalnego
-  let sumFlourGluten = 0;  // gluten strukturalny z mąk (żytnia = 0)
+  let totalFlourBlend = 0;
+  let sumFlourGluten = 0;
 
-  // mąki 1..5
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const row = document.getElementById("flourRow" + i);
     if (row && row.style.display === "none") {
@@ -791,20 +801,14 @@ function recalc() {
     else setOut("g" + i, NaN);
   }
 
-  // żytnia: dodaj do masy mąk, ale nie do glutenu
   const mR = num("mR");
   totalFlourBlend += mR;
 
-  // komunikat o brakującej mące
   updateMissingFlourWarning(totalFlourBlend);
 
-  // łączna masa "mąki" = mąki + gluten witalny
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
 
-  // Sekcja 2 pod tabelą:
-  // - przed masą bazową: "—"
-  // - po masie bazowej: 0,0 / wyliczenia
   if (T <= 0) {
     setOut("sumDryDisplay", NaN);
     setOut("sumGlutenDisplay", NaN);
@@ -812,13 +816,10 @@ function recalc() {
   } else {
     setOut("sumDryDisplay", sumDry, 1);
     setOut("sumGlutenDisplay", sumGluten, 1);
-
-    let glutenPct = (sumDry > 0) ? (sumGluten / sumDry) * 100 : 0;
-    // tu ma być 0,0 (a nie 0,00)
+    const glutenPct = (sumDry > 0) ? (sumGluten / sumDry) * 100 : 0;
     setOut("glutenPercentDisplay", glutenPct, 1);
   }
 
-  // zaczyn
   const L = num("levain"), Lh = num("levainHydro");
   let levFlour = 0, levWater = 0;
 
@@ -831,20 +832,14 @@ function recalc() {
     setOut("levainFlourDisplay", NaN);
     setOut("levainWaterDisplay", NaN);
   } else {
-    // po masie bazowej mają pokazywać 0,0 nawet jeśli L nie wpisany
     setOut("levainFlourDisplay", (L > 0 && Lh > 0) ? levFlour : 0, 1);
     setOut("levainWaterDisplay", (L > 0 && Lh > 0) ? levWater : 0, 1);
   }
 
-  // hydracja
   const totalFlour = sumDry + levFlour;
 
-  if (T <= 0) {
-    setOut("totalFlourDisplay", NaN);
-  } else {
-    // po masie bazowej: 0,0 / wartość
-    setOut("totalFlourDisplay", totalFlour, 1);
-  }
+  if (T <= 0) setOut("totalFlourDisplay", NaN);
+  else setOut("totalFlourDisplay", totalFlour, 1);
 
   hydroSync = true;
 
@@ -860,10 +855,7 @@ function recalc() {
         : NaN;
 
       if (T <= 0) setOut("totalWaterDisplay", NaN);
-      else {
-        // jeśli targetHydro pusty, ale masa bazowa jest -> 0,0
-        setOut("totalWaterDisplay", isNaN(totalWater) ? 0 : totalWater, 1);
-      }
+      else setOut("totalWaterDisplay", isNaN(totalWater) ? 0 : totalWater, 1);
 
       setValue("addedWater", addedWater, 1);
       localStorage.setItem("chleb_addedWater", document.getElementById("addedWater").value);
@@ -885,7 +877,6 @@ function recalc() {
 
   hydroSync = false;
 
-  // sól: % z totalDry
   const saltPct = num("saltPct");
   const saltEl = document.getElementById("salt");
   if (!saltEl) return;
@@ -932,12 +923,10 @@ function clearFields() {
   const mw = document.getElementById("missingFlourWarning");
   if (mw) mw.style.display = "none";
 
-  // ustaw wyjścia na myślniki
   ["sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
    "levainFlourDisplay","levainWaterDisplay",
    "totalFlourDisplay","totalWaterDisplay"].forEach(id => setOut(id, NaN));
 
-  // kolumny glutenowe
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const el = document.getElementById("g" + i);
     if (el) el.value = DASH;
@@ -1018,37 +1007,63 @@ function generateRecipe() {
 
 /* ===== Obsługa inputów % i g ===== */
 function bindFlourInputs() {
+
+  // Nazwy: decyzja dopiero na BLUR (żeby móc edytować bez kasowania)
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const nameEl = document.getElementById("flourName" + i);
+    if (!nameEl) continue;
+
+    nameEl.addEventListener("blur", () => {
+      const name = (nameEl.value || "").trim();
+
+      if (name === "") {
+        if (rowHasAnyValues(i)) {
+          // user edytował nazwę -> nie kasuj danych
+          ensureDefaultName(i);
+        } else {
+          // pusta nazwa + puste pola -> usuń pozycję
+          clearFlourRow(i);
+          return;
+        }
+      }
+
+      localStorage.setItem("chleb_flourName" + i, nameEl.value);
+      recalc();
+    });
+  }
+
+  // Mąki 1..5
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const key = String(i);
     const mEl = document.getElementById("m" + i);
     const pctEl = document.getElementById("pct" + i);
+    const pEl = document.getElementById("p" + i);
+
+    if (pEl) {
+      pEl.addEventListener("input", () => {
+        // wpisanie białka też tworzy pozycję -> auto-nazwa
+        ensureDefaultName(i);
+        recalc();
+      });
+    }
 
     if (mEl) {
       mEl.addEventListener("input", (e) => {
         if (percentSync) return;
 
+        // jeśli user zaczyna wpisywać gramy -> auto-nazwa
+        ensureDefaultName(i);
+
         const raw = (mEl.value || "").trim();
         const isDeleting = (e && e.inputType === "deleteContentBackward");
 
-        // jeśli puste -> ma wyczyścić %
         if (raw === "") {
-  percentSync = true;
+          // czyścimy tylko % (białko zostaje)
+          pctFromGrams(key);
+          recalc();
+          return;
+        }
 
-  // wyczyść procent
-  const pctEl2 = document.getElementById(pctId(key));
-  if (pctEl2) pctEl2.value = "";
-
-  // wyczyść białko
-  const pEl2 = document.getElementById("p" + key);
-  if (pEl2) pEl2.value = "";
-
-  percentSync = false;
-
-  recalc();
-  return;
-}
-
-        // niedokończone (np. "1000," lub kasowanie w trakcie) -> tylko sync i recalc
         if (/[.,]$/.test(raw) || isDeleting) {
           pctFromGrams(key);
           recalc();
@@ -1080,12 +1095,15 @@ function bindFlourInputs() {
       pctEl.addEventListener("input", (e) => {
         if (percentSync) return;
 
+        // jeśli user zaczyna wpisywać % -> auto-nazwa
+        ensureDefaultName(i);
+
         const raw = (pctEl.value || "").trim();
         const isDeleting = (e && e.inputType === "deleteContentBackward");
 
-        // jeśli puste -> ma wyczyścić gramy
         if (raw === "") {
-          gramsFromPct(key); // to wyczyści gramy
+          // czyścimy tylko gramy (białko zostaje)
+          gramsFromPct(key);
           recalc();
           return;
         }
@@ -1198,16 +1216,12 @@ function bindFlourInputs() {
     });
   }
 
-  // jeśli zmienia się masa bazowa albo gluten:
-  // NOWA LOGIKA: nie ruszaj gramów, jeśli user wpisał gramy
+  // Masa bazowa / gluten: nie ruszaj gramów jeśli user je wpisał
   const totalDry = document.getElementById("totalDry");
   const gluten = document.getElementById("glutenProd");
   const onBaseChange = () => {
     if (percentSync) return;
-
-    for (const k of activeKeys()) {
-      syncRowOnBaseChange(k);
-    }
+    for (const k of activeKeys()) syncRowOnBaseChange(k);
     recalc();
   };
   if (totalDry) totalDry.addEventListener("input", onBaseChange);
@@ -1220,15 +1234,6 @@ loadFlourCount();
 updateFlourVisibility();
 setupAutosave();
 bindFlourInputs();
-
-[
-  "m1","m2","m3","m4","m5",
-  "pct1","pct2","pct3","pct4","pct5",
-  "p1","p2","p3","p4","p5",
-  "mR","pctR",
-  "glutenProd"
-].forEach(id => clearZeroOnFocus(document.getElementById(id)));
-
 recalc();
 
 /* Dodaj mąkę */
