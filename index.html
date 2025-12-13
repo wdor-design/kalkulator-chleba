@@ -63,6 +63,8 @@
       font-size: 0.86rem;
       border: 1px solid #ccc;
       border-radius: 8px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 400;
     }
 
     input:not([readonly]),
@@ -83,6 +85,24 @@
       background-color: #f5f5f5;
       border-color: #ddd;
       cursor: default;
+      font-weight: 400; /* spójnie jak tabela */
+    }
+
+    /* Spójne "pola wyjściowe" — identyczne jak readonly inputy */
+    .out {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.86rem;
+      font-weight: 400;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 2.1rem;
+      box-sizing: border-box;
+      display: block;
+      width: 100%;
+      cursor: default;
+      font-variant-numeric: tabular-nums;
     }
 
     .grid {
@@ -101,7 +121,7 @@
 
     .grid input[type="number"],
     .grid input[type="text"],
-    .grid .output {
+    .grid .out {
       width: 100%;
       justify-self: start;
       display: block;
@@ -132,17 +152,6 @@
       margin-bottom: var(--v-gap);
     }
     .btn-row .btn { flex: 1 1 0; width: auto; }
-
-    .output {
-      font-weight: 600;
-      background-color: #f5f5f5;
-      border: 1px solid #ddd;
-      padding: 0.35rem 0.45rem;
-      border-radius: 8px;
-      min-height: 2.1rem;
-      display: flex;
-      align-items: center;
-    }
 
     .hint {
       font-size: 0.8rem;
@@ -263,7 +272,7 @@
       <input type="number" id="m1" step="1" min="0" />
       <input type="number" id="pct1" step="0.1" min="0" max="100" />
       <input type="number" id="p1" step="0.1" min="0" />
-      <!-- ✅ zmiana: text readonly, bo chcemy móc pokazać — -->
+      <!-- g1 jako text żeby móc pokazać "—" -->
       <input type="text" id="g1" readonly />
     </div>
 
@@ -305,7 +314,6 @@
       <div class="fake-input gluten-name">Mąka<br>żytnia</div>
       <input type="number" id="mR" step="1" min="0" />
       <input type="number" id="pctR" step="0.1" min="0" max="100" />
-      <!-- ✅ spójny długi myślnik -->
       <input type="text" id="pR" value="—" readonly />
       <input type="text" id="gR" value="—" readonly />
     </div>
@@ -313,11 +321,11 @@
     <!-- Gluten (zawsze na dole) -->
     <div class="flour-row" id="glutenRow">
       <div class="fake-input gluten-name">Gluten<br>witalny</div>
-      <!-- ✅ startowo PUSTE (bez 0) -->
+      <!-- startowo PUSTE -->
       <input type="number" id="glutenProd" step="0.5" min="0" />
       <input type="text" id="pctG" value="—" readonly />
       <input type="number" id="pG" value="80" readonly />
-      <!-- ✅ zmiana: text readonly, bo chcemy móc pokazać — -->
+      <!-- gG jako text żeby móc pokazać "—" -->
       <input type="text" id="gG" readonly />
     </div>
 
@@ -336,15 +344,15 @@
   <div class="grid" style="margin-top: var(--v-gap);">
     <span class="field-label">Łączna masa mąki [g]</span>
     <div>
-      <span class="output" id="sumDryDisplay">—</span>
+      <input class="out" type="text" id="sumDryDisplay" value="—" readonly />
       <div id="missingFlourWarning"></div>
     </div>
 
     <span class="field-label">Zawartość glutenu w mieszance [g]</span>
-    <span class="output" id="sumGlutenDisplay">—</span>
+    <input class="out" type="text" id="sumGlutenDisplay" value="—" readonly />
 
     <span class="field-label">Zawartość glutenu w mieszance [%]</span>
-    <span class="output" id="glutenPercentDisplay">—</span>
+    <input class="out" type="text" id="glutenPercentDisplay" value="—" readonly />
   </div>
 </div>
 
@@ -364,10 +372,10 @@
     <input type="number" id="levainHydro" step="1" min="0" />
 
     <span class="field-label">Mąka w zaczynie [g]</span>
-    <span class="output" id="levainFlourDisplay">—</span>
+    <input class="out" type="text" id="levainFlourDisplay" value="—" readonly />
 
     <span class="field-label">Woda w zaczynie [g]</span>
-    <span class="output" id="levainWaterDisplay">—</span>
+    <input class="out" type="text" id="levainWaterDisplay" value="—" readonly />
   </div>
 </div>
 
@@ -383,10 +391,10 @@
     <input type="number" id="addedWater" step="1" min="0" />
 
     <span class="field-label">Łączna masa mąki (mieszanka + zaczyn) [g]</span>
-    <span class="output" id="totalFlourDisplay">—</span>
+    <input class="out" type="text" id="totalFlourDisplay" value="—" readonly />
 
     <span class="field-label">Łączna ilość wody (łącznie z zaczynem) [g]</span>
-    <span class="output" id="totalWaterDisplay">—</span>
+    <input class="out" type="text" id="totalWaterDisplay" value="—" readonly />
   </div>
 </div>
 
@@ -399,8 +407,8 @@
     <input type="number" id="saltPct" step="0.1" min="0" />
 
     <label for="salt">Dodatek soli [g]</label>
-    <!-- ✅ zmiana: text readonly, bo chcemy móc pokazać — -->
-    <input type="text" id="salt" readonly />
+    <!-- zmienione na text, żeby pokazać "—" -->
+    <input type="text" id="salt" readonly value="—" />
   </div>
 </div>
 
@@ -417,10 +425,9 @@
 </div>
 
 <script>
-/* ====== KONSTANSY / WYŚWIETLANIE ====== */
+/* ===== HELPERY ===== */
 const DASH = "—";
 
-/* HELPERY */
 function num(id) {
   const el = document.getElementById(id);
   const v = parseFloat((el?.value || "").replace(",", "."));
@@ -430,7 +437,7 @@ function num(id) {
 function setValue(id, val, decimals = 1) {
   const el = document.getElementById(id);
   if (!el) return;
-  if (typeof val === "number" && !isNaN(val)) el.value = val.toFixed(decimals);
+  if (typeof val === "number" && isFinite(val)) el.value = val.toFixed(decimals);
   else el.value = "";
 }
 
@@ -438,36 +445,24 @@ function setUserValue(id, val, decimals = 1) {
   const el = document.getElementById(id);
   if (!el) return;
 
-  if (typeof val === "number" && !isNaN(val) && Math.abs(val) < 1e-9) {
+  if (typeof val === "number" && isFinite(val) && Math.abs(val) < 1e-9) {
     el.value = "";
     return;
   }
-  if (typeof val === "number" && !isNaN(val)) el.value = val.toFixed(decimals);
+  if (typeof val === "number" && isFinite(val)) el.value = val.toFixed(decimals);
   else el.value = "";
 }
 
-function setText(id, val, decimals = 1) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (typeof val === "number" && !isNaN(val)) el.textContent = val.toFixed(decimals);
-  else el.textContent = DASH;
-}
-
-/* ✅ dla pól readonly typu text (g1..g5, gG, salt): liczba -> "0,0", brak -> "—" */
-function setCalcTextInput(id, val, decimals = 1, useDash = false) {
+/* Setter do pól WYJŚCIOWYCH (input text readonly) z myślnikiem */
+function setOut(id, val, decimals = 1) {
   const el = document.getElementById(id);
   if (!el) return;
 
-  if (useDash) { el.value = DASH; return; }
-
-  if (typeof val === "number" && isFinite(val) && !isNaN(val)) {
-    el.value = val.toFixed(decimals);
-  } else {
-    el.value = DASH;
-  }
+  if (typeof val === "number" && isFinite(val)) el.value = val.toFixed(decimals);
+  else el.value = DASH;
 }
 
-/* (może zostać – nie szkodzi, a przy clamp do 0 też wyczyści) */
+/* (może zostać – nie szkodzi) */
 function clearZeroOnFocus(el) {
   if (!el || el.readOnly) return;
 
@@ -663,7 +658,29 @@ function pctFromGrams(k) {
   percentSync = false;
 }
 
-/* Zerowanie pozostałych (ma czyścić także białko) */
+/* NOWE: zachowanie przy zmianie masy bazowej / glutenu
+   - jeśli są gramy -> gramy zostają, przeliczamy tylko %
+   - jeśli nie ma gramów, ale są % -> licz gramy z %
+*/
+function syncRowOnBaseChange(k) {
+  const mEl = document.getElementById(mId(k));
+  const pctEl = document.getElementById(pctId(k));
+  if (!mEl || !pctEl) return;
+
+  const mRaw = (mEl.value || "").trim();
+  const pctRaw = (pctEl.value || "").trim();
+
+  if (mRaw !== "") {
+    pctFromGrams(k);
+    return;
+  }
+  if (pctRaw !== "") {
+    gramsFromPct(k);
+    return;
+  }
+}
+
+/* Zerowanie pozostałych (czyści także białko) */
 function zeroOthers(lockedKey) {
   for (const k of activeKeys()) {
     if (k === lockedKey) continue;
@@ -718,6 +735,7 @@ function normalizeGrams(lockedKey) {
   let total = 0;
   for (const k of keys) total += num(mId(k));
 
+  // skalujemy tylko gdy przekroczony target
   if (total <= target + 1e-9) return;
 
   const lockedG = num(mId(lockedKey));
@@ -738,16 +756,17 @@ function normalizeGrams(lockedKey) {
   showScaleMessage(`Przeskalowano mąki do masy bazowej ${T.toFixed(0)} g`);
 }
 
-/* OBLICZENIA */
+/* ===== OBLICZENIA ===== */
 function recalc() {
   const T = num("totalDry");
-  const hasBase = T > 0;
 
   // gluten witalny
   const Gprod = num("glutenProd");
   const gG = Gprod * 0.8;
-  // ✅ gG: przed masą bazową -> —, po -> liczba (0,0...)
-  setCalcTextInput("gG", gG, 1, !hasBase);
+
+  // kolumny gX / gG: przed masą bazową -> "—", po masie bazowej -> 0,0 / wartości
+  if (T > 0) setOut("gG", gG, 1);
+  else setOut("gG", NaN);
 
   let totalFlourBlend = 0; // mąki (w tym żytnia), bez glutenu witalnego
   let sumFlourGluten = 0;  // gluten strukturalny z mąk (żytnia = 0)
@@ -756,7 +775,6 @@ function recalc() {
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const row = document.getElementById("flourRow" + i);
     if (row && row.style.display === "none") {
-      // ukryte: czyść
       const gEl = document.getElementById("g" + i);
       if (gEl) gEl.value = "";
       continue;
@@ -769,8 +787,8 @@ function recalc() {
     totalFlourBlend += mi;
     sumFlourGluten += gi;
 
-    // ✅ gX: przed masą bazową -> —, po -> liczba (0,0...)
-    setCalcTextInput("g" + i, gi, 1, !hasBase);
+    if (T > 0) setOut("g" + i, gi, 1);
+    else setOut("g" + i, NaN);
   }
 
   // żytnia: dodaj do masy mąk, ale nie do glutenu
@@ -784,25 +802,20 @@ function recalc() {
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
 
-  // Jeśli nic nie wpisane i brak masy bazowej -> pokazuj kreski
-  const hasAnyForSection2 = (T > 0) || (sumDry > 0) || (sumGluten > 0);
-
-  if (!hasAnyForSection2) {
-    setText("sumDryDisplay", NaN);
-    setText("sumGlutenDisplay", NaN);
-    setText("glutenPercentDisplay", NaN);
+  // Sekcja 2 pod tabelą:
+  // - przed masą bazową: "—"
+  // - po masie bazowej: 0,0 / wyliczenia
+  if (T <= 0) {
+    setOut("sumDryDisplay", NaN);
+    setOut("sumGlutenDisplay", NaN);
+    setOut("glutenPercentDisplay", NaN);
   } else {
-    setText("sumDryDisplay", sumDry, 1);
-    setText("sumGlutenDisplay", sumGluten, 1);
+    setOut("sumDryDisplay", sumDry, 1);
+    setOut("sumGlutenDisplay", sumGluten, 1);
 
-    // ✅ % ma być 0,0 gdy wpisana masa bazowa, nawet jeśli sumDry = 0
-    let glutenPct;
-    if (sumDry > 0) glutenPct = (sumGluten / sumDry) * 100;
-    else glutenPct = (T > 0 ? 0 : NaN);
-
-    if (T > 0 && (!isFinite(glutenPct) || isNaN(glutenPct))) glutenPct = 0;
-    // ✅ 1 miejsce po przecinku (0,0), nie 0,00
-    setText("glutenPercentDisplay", glutenPct, 1);
+    let glutenPct = (sumDry > 0) ? (sumGluten / sumDry) * 100 : 0;
+    // tu ma być 0,0 (a nie 0,00)
+    setOut("glutenPercentDisplay", glutenPct, 1);
   }
 
   // zaczyn
@@ -814,12 +827,24 @@ function recalc() {
     levWater = L - levFlour;
   }
 
-  setText("levainFlourDisplay", (L > 0 && Lh > 0) ? levFlour : NaN, 1);
-  setText("levainWaterDisplay", (L > 0 && Lh > 0) ? levWater : NaN, 1);
+  if (T <= 0) {
+    setOut("levainFlourDisplay", NaN);
+    setOut("levainWaterDisplay", NaN);
+  } else {
+    // po masie bazowej mają pokazywać 0,0 nawet jeśli L nie wpisany
+    setOut("levainFlourDisplay", (L > 0 && Lh > 0) ? levFlour : 0, 1);
+    setOut("levainWaterDisplay", (L > 0 && Lh > 0) ? levWater : 0, 1);
+  }
 
   // hydracja
   const totalFlour = sumDry + levFlour;
-  setText("totalFlourDisplay", (hasAnyForSection2 || L > 0) ? totalFlour : NaN, 1);
+
+  if (T <= 0) {
+    setOut("totalFlourDisplay", NaN);
+  } else {
+    // po masie bazowej: 0,0 / wartość
+    setOut("totalFlourDisplay", totalFlour, 1);
+  }
 
   hydroSync = true;
 
@@ -834,7 +859,12 @@ function recalc() {
         ? Math.max(0, totalWater - levWater)
         : NaN;
 
-      setText("totalWaterDisplay", totalWater, 1);
+      if (T <= 0) setOut("totalWaterDisplay", NaN);
+      else {
+        // jeśli targetHydro pusty, ale masa bazowa jest -> 0,0
+        setOut("totalWaterDisplay", isNaN(totalWater) ? 0 : totalWater, 1);
+      }
+
       setValue("addedWater", addedWater, 1);
       localStorage.setItem("chleb_addedWater", document.getElementById("addedWater").value);
     } else {
@@ -842,12 +872,15 @@ function recalc() {
       const totalWater = levWater + aw;
       const hydro = totalWater / totalFlour * 100;
 
-      setText("totalWaterDisplay", totalWater, 1);
+      if (T <= 0) setOut("totalWaterDisplay", NaN);
+      else setOut("totalWaterDisplay", totalWater, 1);
+
       setValue("targetHydro", hydro, 1);
       localStorage.setItem("chleb_targetHydro", document.getElementById("targetHydro").value);
     }
   } else {
-    setText("totalWaterDisplay", NaN);
+    if (T <= 0) setOut("totalWaterDisplay", NaN);
+    else setOut("totalWaterDisplay", 0, 1);
   }
 
   hydroSync = false;
@@ -855,17 +888,17 @@ function recalc() {
   // sól: % z totalDry
   const saltPct = num("saltPct");
   const saltEl = document.getElementById("salt");
-  if (saltEl) {
-    if (T > 0 && saltPct > 0) {
-      const salt = (T * saltPct / 100);
-      saltEl.value = salt.toFixed(1);
-    } else {
-      saltEl.value = DASH;
-    }
+  if (!saltEl) return;
+
+  if (T <= 0) {
+    saltEl.value = DASH;
+  } else {
+    const salt = (saltPct > 0) ? (T * saltPct / 100) : 0;
+    saltEl.value = salt.toFixed(1);
   }
 }
 
-/* RESET */
+/* ===== RESET ===== */
 function clearFields() {
   clearStoredFields();
 
@@ -891,19 +924,6 @@ function clearFields() {
   const saltPctEl = document.getElementById("saltPct");
   if (saltPctEl) saltPctEl.value = "2";
 
-  // ✅ reset: sól ma być —
-  const saltEl = document.getElementById("salt");
-  if (saltEl) saltEl.value = DASH;
-
-  [
-    "sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
-    "levainFlourDisplay","levainWaterDisplay",
-    "totalFlourDisplay","totalWaterDisplay"
-  ].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = DASH;
-  });
-
   const summary = document.getElementById("recipeSummary");
   if (summary) summary.value = "";
 
@@ -912,10 +932,26 @@ function clearFields() {
   const mw = document.getElementById("missingFlourWarning");
   if (mw) mw.style.display = "none";
 
+  // ustaw wyjścia na myślniki
+  ["sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
+   "levainFlourDisplay","levainWaterDisplay",
+   "totalFlourDisplay","totalWaterDisplay"].forEach(id => setOut(id, NaN));
+
+  // kolumny glutenowe
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const el = document.getElementById("g" + i);
+    if (el) el.value = DASH;
+  }
+  const gGEl = document.getElementById("gG");
+  if (gGEl) gGEl.value = DASH;
+
+  const saltEl = document.getElementById("salt");
+  if (saltEl) saltEl.value = DASH;
+
   recalc();
 }
 
-/* PRZEPIS */
+/* ===== PRZEPIS ===== */
 function generateRecipe() {
   const lines = [];
 
@@ -927,16 +963,16 @@ function generateRecipe() {
   const targetHydro = num("targetHydro");
   const addedWater = num("addedWater");
 
-  const salt = parseFloat((document.getElementById("salt")?.value || "").replace(",", "."));
   const saltPct = num("saltPct");
+  const saltText = (document.getElementById("salt")?.value || DASH);
 
-  const sumDryText = document.getElementById("sumDryDisplay").textContent;
-  const sumGlutenText = document.getElementById("sumGlutenDisplay").textContent;
-  const glutenPctText = document.getElementById("glutenPercentDisplay").textContent;
-  const levFlourText = document.getElementById("levainFlourDisplay").textContent;
-  const levWaterText = document.getElementById("levainWaterDisplay").textContent;
-  const totalFlourText = document.getElementById("totalFlourDisplay").textContent;
-  const totalWaterText = document.getElementById("totalWaterDisplay").textContent;
+  const sumDryText = document.getElementById("sumDryDisplay").value;
+  const sumGlutenText = document.getElementById("sumGlutenDisplay").value;
+  const glutenPctText = document.getElementById("glutenPercentDisplay").value;
+  const levFlourText = document.getElementById("levainFlourDisplay").value;
+  const levWaterText = document.getElementById("levainWaterDisplay").value;
+  const totalFlourText = document.getElementById("totalFlourDisplay").value;
+  const totalWaterText = document.getElementById("totalWaterDisplay").value;
 
   lines.push("PRZEPIS – chleb na zakwasie\n");
 
@@ -975,12 +1011,12 @@ function generateRecipe() {
   if (addedWater > 0) lines.push("- Woda do dodania: " + addedWater.toFixed(1) + " g");
 
   lines.push("\nSól:");
-  if (!isNaN(salt) && salt > 0 && saltPct > 0) lines.push(`- Dodatek soli (${saltPct.toFixed(1)}%): ${salt.toFixed(1)} g`);
+  if (saltText !== DASH) lines.push(`- Dodatek soli (${saltPct.toFixed(1)}%): ${saltText} g`);
 
   document.getElementById("recipeSummary").value = lines.join("\n");
 }
 
-/* Obsługa inputów % i g */
+/* ===== Obsługa inputów % i g ===== */
 function bindFlourInputs() {
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const key = String(i);
@@ -991,19 +1027,22 @@ function bindFlourInputs() {
       mEl.addEventListener("input", (e) => {
         if (percentSync) return;
 
-        // ✅ iOS backspace: nadal nie clampuj/nie normalizuj, ALE jeśli pole puste -> wyczyść parę
-        if (e && e.inputType === "deleteContentBackward") {
-          if ((mEl.value || "").trim() === "") {
-            percentSync = true;
-            if (pctEl) pctEl.value = "";
-            percentSync = false;
-          }
+        const raw = (mEl.value || "").trim();
+        const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+        // jeśli puste -> ma wyczyścić %
+        if (raw === "") {
+          pctFromGrams(key); // to wyczyści procent
           recalc();
           return;
         }
 
-        const raw = (mEl.value || "").trim();
-        if (/[.,]$/.test(raw)) { recalc(); return; }
+        // niedokończone (np. "1000," lub kasowanie w trakcie) -> tylko sync i recalc
+        if (/[.,]$/.test(raw) || isDeleting) {
+          pctFromGrams(key);
+          recalc();
+          return;
+        }
 
         const target = flourTargetMass();
         const val = num(mId(key));
@@ -1030,18 +1069,21 @@ function bindFlourInputs() {
       pctEl.addEventListener("input", (e) => {
         if (percentSync) return;
 
-        if (e && e.inputType === "deleteContentBackward") {
-          if ((pctEl.value || "").trim() === "") {
-            percentSync = true;
-            if (mEl) mEl.value = "";
-            percentSync = false;
-          }
+        const raw = (pctEl.value || "").trim();
+        const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+        // jeśli puste -> ma wyczyścić gramy
+        if (raw === "") {
+          gramsFromPct(key); // to wyczyści gramy
           recalc();
           return;
         }
 
-        const raw = (pctEl.value || "").trim();
-        if (/[.,]$/.test(raw)) { recalc(); return; }
+        if (/[.,]$/.test(raw) || isDeleting) {
+          gramsFromPct(key);
+          recalc();
+          return;
+        }
 
         const val = num(pctId(key));
 
@@ -1072,18 +1114,19 @@ function bindFlourInputs() {
     mR.addEventListener("input", (e) => {
       if (percentSync) return;
 
-      if (e && e.inputType === "deleteContentBackward") {
-        if ((mR.value || "").trim() === "") {
-          percentSync = true;
-          if (pctR) pctR.value = "";
-          percentSync = false;
-        }
+      const raw = (mR.value || "").trim();
+      const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+      if (raw === "") {
+        pctFromGrams("R");
         recalc();
         return;
       }
-
-      const raw = (mR.value || "").trim();
-      if (/[.,]$/.test(raw)) { recalc(); return; }
+      if (/[.,]$/.test(raw) || isDeleting) {
+        pctFromGrams("R");
+        recalc();
+        return;
+      }
 
       const target = flourTargetMass();
       const val = num("mR");
@@ -1110,18 +1153,19 @@ function bindFlourInputs() {
     pctR.addEventListener("input", (e) => {
       if (percentSync) return;
 
-      if (e && e.inputType === "deleteContentBackward") {
-        if ((pctR.value || "").trim() === "") {
-          percentSync = true;
-          if (mR) mR.value = "";
-          percentSync = false;
-        }
+      const raw = (pctR.value || "").trim();
+      const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+      if (raw === "") {
+        gramsFromPct("R");
         recalc();
         return;
       }
-
-      const raw = (pctR.value || "").trim();
-      if (/[.,]$/.test(raw)) { recalc(); return; }
+      if (/[.,]$/.test(raw) || isDeleting) {
+        gramsFromPct("R");
+        recalc();
+        return;
+      }
 
       const val = num("pctR");
 
@@ -1143,19 +1187,23 @@ function bindFlourInputs() {
     });
   }
 
-  // jeśli zmienia się masa bazowa albo gluten: przelicz gramy z aktualnych %
+  // jeśli zmienia się masa bazowa albo gluten:
+  // NOWA LOGIKA: nie ruszaj gramów, jeśli user wpisał gramy
   const totalDry = document.getElementById("totalDry");
   const gluten = document.getElementById("glutenProd");
   const onBaseChange = () => {
     if (percentSync) return;
-    for (const k of activeKeys()) gramsFromPct(k);
+
+    for (const k of activeKeys()) {
+      syncRowOnBaseChange(k);
+    }
     recalc();
   };
   if (totalDry) totalDry.addEventListener("input", onBaseChange);
   if (gluten) gluten.addEventListener("input", onBaseChange);
 }
 
-/* INIT */
+/* ===== INIT ===== */
 restoreFields();
 loadFlourCount();
 updateFlourVisibility();
