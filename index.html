@@ -16,7 +16,7 @@
 
   <style>
     :root{
-      --v-gap: 0.75rem; /* spójny odstęp pionowy wszędzie */
+      --v-gap: 0.75rem;
     }
 
     body {
@@ -42,14 +42,12 @@
     h1 { font-size: 1.35rem; margin: 0; }
     h2 { font-size: 1.1rem; }
 
-    /* SEKCJE (RAMKI) */
     .section {
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 0.8rem;
       margin-bottom: 1rem;
       background: #fff;
-
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
@@ -74,7 +72,6 @@
       border-radius: 8px;
     }
 
-    /* Pola edytowalne */
     input:not([readonly]),
     textarea:not([readonly]) {
       background-color: #e6f4ff;
@@ -89,7 +86,6 @@
       outline: none;
     }
 
-    /* Pola readonly – szare */
     input[readonly] {
       background-color: #f5f5f5;
       border-color: #ddd;
@@ -142,6 +138,7 @@
       align-items: center;
       margin-bottom: var(--v-gap);
     }
+
     .btn-row .btn {
       flex: 1 1 0;
       width: auto;
@@ -208,16 +205,19 @@
       text-align: center;
     }
 
-    /* Walidacja sumy % */
-    .input-error{
-      outline: 2px solid #d33;
-    }
     #percentWarning{
       display:none;
       color:#d33;
       font-size:0.82rem;
       margin-top: 0.25rem;
       max-width: 900px;
+    }
+
+    #missingFlourWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top:0.2rem;
     }
 
     #recipeSummary {
@@ -256,7 +256,7 @@
   <h2>2. Kompozycja mąk</h2>
 
   <p class="hint">
-    Jeśli łączna masa mąki różni się od podanej powyżej masy bazowej, użyj przycisku „Przeskaluj”, aby automatycznie dostosować ilości mąk.
+    Możesz wpisywać ilości [g] albo udziały [%]. Kalkulator automatycznie dopasuje pozostałe wartości do limitów (100% / masa bazowa).
   </p>
 
   <div class="flour-table">
@@ -293,7 +293,7 @@
       <input type="number" id="g3" readonly />
     </div>
 
-    <!-- Dynamiczne wiersze 4 i 5 (nad żytnią i glutenem) -->
+    <!-- Dynamiczne wiersze 4 i 5 -->
     <div class="flour-row" id="flourRow4" style="display:none;">
       <input type="text" id="flourName4" placeholder="np. T150" />
       <input type="number" id="m4" step="1" min="0" />
@@ -310,7 +310,7 @@
       <input type="number" id="g5" readonly />
     </div>
 
-    <!-- NOWY WIERSZ: ŻYTNIA (stały, bez białka/glutenu) -->
+    <!-- Żytnia (stały wiersz) -->
     <div class="flour-row" id="ryeRow">
       <div class="fake-input gluten-name">Mąka<br>żytnia</div>
       <input type="number" id="mR" step="1" min="0" />
@@ -330,9 +330,10 @@
 
   </div><!-- /.flour-table -->
 
-  <div id="percentWarning">Suma udziałów nie może przekroczyć 100%.</div>
+  <!-- Komunikaty -->
+  <div id="percentWarning"></div>
 
-  <!-- Przycisk dodawania mąki (pod tabelą, po prawej) -->
+  <!-- Przycisk dodawania mąki -->
   <div class="grid" style="margin-top: var(--v-gap);">
     <span></span>
     <button class="btn" id="addFlourBtn" type="button">Dodaj kolejną mąkę (max 5)</button>
@@ -341,10 +342,10 @@
   <!-- Podsumowania -->
   <div class="grid" style="margin-top: var(--v-gap);">
     <span class="field-label">Łączna masa mąki [g]</span>
-    <span class="output" id="sumDryDisplay">–</span>
-
-    <span></span>
-    <button class="btn" id="scaleBtn" type="button">Przeskaluj</button>
+    <div>
+      <span class="output" id="sumDryDisplay">–</span>
+      <div id="missingFlourWarning"></div>
+    </div>
 
     <span class="field-label">Zawartość glutenu w mieszance [g]</span>
     <span class="output" id="sumGlutenDisplay">–</span>
@@ -447,99 +448,6 @@ function setText(id, val, decimals = 1) {
 let lastHydroEdit = "target";
 let hydroSync = false;
 
-/* % ↔ g dla mąk */
-let percentSync = false;
-const flourMode = {}; // "pct" albo "g" per id ("1".."5","R")
-
-function loadFlourModes() {
-  for (const k of ["1","2","3","4","5","R"]) {
-    const saved = localStorage.getItem("chleb_mode_" + k);
-    if (saved === "pct" || saved === "g") flourMode[k] = saved;
-  }
-}
-
-function setMode(k, mode) {
-  flourMode[k] = mode;
-  localStorage.setItem("chleb_mode_" + k, mode);
-}
-
-function flourTargetMass() {
-  const T = num("totalDry");
-  const G = num("glutenProd");
-  if (T <= 0) return 0;
-  return Math.max(0, T - G); // procenty rozkładamy na mąki (bez glutenu witalnego)
-}
-
-function sumPercentsVisible(exceptKey = null) {
-  let s = 0;
-  for (let i = 1; i <= MAX_FLOURS; i++) {
-    const row = document.getElementById("flourRow" + i);
-    if (row && row.style.display === "none") continue;
-    const key = String(i);
-    if (key === exceptKey) continue;
-    s += num("pct" + i);
-  }
-  if (exceptKey !== "R") s += num("pctR");
-  return s;
-}
-
-function validatePercentLimit(exceptKey = null) {
-  const warn = document.getElementById("percentWarning");
-
-  let total = sumPercentsVisible(exceptKey);
-  if (exceptKey) {
-    total += (exceptKey === "R") ? num("pctR") : num("pct" + exceptKey);
-  }
-
-  const ok = total <= 100 + 1e-9;
-
-  // wyczyść błędy
-  for (let i = 1; i <= MAX_FLOURS; i++) {
-    const el = document.getElementById("pct" + i);
-    if (el) el.classList.remove("input-error");
-  }
-  const elR = document.getElementById("pctR");
-  if (elR) elR.classList.remove("input-error");
-
-  if (!ok) {
-    const badEl = (exceptKey === "R") ? document.getElementById("pctR") : document.getElementById("pct" + exceptKey);
-    if (badEl) badEl.classList.add("input-error");
-  }
-
-  if (warn) warn.style.display = ok ? "none" : "block";
-  return ok;
-}
-
-function setGramsFromPct(key) {
-  const target = flourTargetMass();
-  if (target <= 0) return;
-
-  if (!validatePercentLimit(key)) return;
-
-  const pct = (key === "R") ? num("pctR") : num("pct" + key);
-  const grams = target * (pct / 100);
-
-  percentSync = true;
-  if (key === "R") setValue("mR", grams, 1);
-  else setValue("m" + key, grams, 1);
-  percentSync = false;
-}
-
-function setPctFromGrams(key) {
-  const target = flourTargetMass();
-  if (target <= 0) return;
-
-  const grams = (key === "R") ? num("mR") : num("m" + key);
-  const pct = (grams / target) * 100;
-
-  percentSync = true;
-  if (key === "R") setValue("pctR", pct, 1);
-  else setValue("pct" + key, pct, 1);
-  percentSync = false;
-
-  validatePercentLimit(key);
-}
-
 /* DYNAMICZNE MĄKI */
 const MAX_FLOURS = 5;
 let flourCount = 3;
@@ -564,7 +472,7 @@ function updateFlourVisibility() {
   if (btn) btn.disabled = flourCount >= MAX_FLOURS;
 }
 
-/* AUTOSAVE (LOCALSTORAGE) */
+/* AUTOSAVE */
 const fieldsToSave = [
   "totalDry",
   "saltPct",
@@ -605,7 +513,6 @@ function setupAutosave() {
       }
       localStorage.setItem("chleb_" + id, el.value);
       recalc();
-      updateScaleButton();
     });
   });
 }
@@ -613,41 +520,161 @@ function setupAutosave() {
 function clearStoredFields() {
   fieldsToSave.forEach(id => localStorage.removeItem("chleb_" + id));
   localStorage.removeItem("chleb_flourCount");
-  for (const k of ["1","2","3","4","5","R"]) localStorage.removeItem("chleb_mode_" + k);
+}
+
+/* Komunikaty */
+function showScaleMessage(text) {
+  const el = document.getElementById("percentWarning");
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = "block";
+  clearTimeout(showScaleMessage._t);
+  showScaleMessage._t = setTimeout(() => {
+    el.style.display = "none";
+  }, 2500);
+}
+
+function updateMissingFlourWarning(totalFlourBlend) {
+  const T = num("totalDry");
+  const G = num("glutenProd");
+  const target = Math.max(0, T - G);
+
+  const el = document.getElementById("missingFlourWarning");
+  if (!el) return;
+
+  if (target > 0 && totalFlourBlend < target - 0.5) {
+    const missing = target - totalFlourBlend;
+    el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby jej ilość wyniosła ${target.toFixed(0)} g.`;
+    el.style.display = "block";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+/* Masa docelowa mąk (bez glutenu witalnego) */
+function flourTargetMass() {
+  const T = num("totalDry");
+  const G = num("glutenProd");
+  if (T <= 0) return 0;
+  return Math.max(0, T - G);
+}
+
+/* Narzędzia listowania aktywnych kluczy */
+function activeKeys() {
+  const keys = [];
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display !== "none") keys.push(String(i));
+  }
+  keys.push("R");
+  return keys;
+}
+
+function pctId(k) { return (k === "R") ? "pctR" : ("pct" + k); }
+function mId(k)   { return (k === "R") ? "mR"   : ("m" + k);   }
+
+/* Przeliczenia %<->g */
+let percentSync = false;
+
+function gramsFromPct(k) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  const pct = num(pctId(k));
+  const grams = target * (pct / 100);
+
+  percentSync = true;
+  setValue(mId(k), grams, 1);
+  percentSync = false;
+}
+
+function pctFromGrams(k) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  const grams = num(mId(k));
+  const pct = (grams / target) * 100;
+
+  percentSync = true;
+  setValue(pctId(k), pct, 1);
+  percentSync = false;
+}
+
+/* Zerowanie pozostałych */
+function zeroOthers(lockedKey) {
+  for (const k of activeKeys()) {
+    if (k === lockedKey) continue;
+    percentSync = true;
+    setValue(pctId(k), 0, 1);
+    setValue(mId(k), 0, 1);
+    percentSync = false;
+  }
+}
+
+/* Skalowanie procentów do 100% */
+function normalizePercents(lockedKey) {
+  const keys = activeKeys();
+  let total = 0;
+  for (const k of keys) total += num(pctId(k));
+
+  if (total <= 100 + 1e-9) return;
+
+  const lockedPct = num(pctId(lockedKey));
+  const rest = total - lockedPct;
+  const target = 100 - lockedPct;
+  if (target < 0) return;
+
+  percentSync = true;
+  for (const k of keys) {
+    if (k === lockedKey) continue;
+    const v = num(pctId(k));
+    const scaled = rest > 0 ? (v * target / rest) : 0;
+    setValue(pctId(k), scaled, 1);
+  }
+  percentSync = false;
+
+  showScaleMessage("Przeskalowano wartości do 100%");
+}
+
+/* Skalowanie gramów do masy bazowej (bez glutenu) */
+function normalizeGrams(lockedKey) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  const keys = activeKeys();
+  let total = 0;
+  for (const k of keys) total += num(mId(k));
+
+  if (total <= target + 1e-9) return;
+
+  const lockedG = num(mId(lockedKey));
+  const rest = total - lockedG;
+  const remaining = target - lockedG;
+  if (remaining < 0) return;
+
+  percentSync = true;
+  for (const k of keys) {
+    if (k === lockedKey) continue;
+    const v = num(mId(k));
+    const scaled = rest > 0 ? (v * remaining / rest) : 0;
+    setValue(mId(k), scaled, 1);
+  }
+  percentSync = false;
+
+  showScaleMessage(`Przeskalowano wartości do masy bazowej ${target.toFixed(0)} g`);
 }
 
 /* OBLICZENIA */
 function recalc() {
-  // jeśli użytkownik pracuje w %, przelicz gramy przed resztą
-  if (!percentSync) {
-    const target = flourTargetMass();
-    if (target > 0) {
-      for (let i = 1; i <= MAX_FLOURS; i++) {
-        const row = document.getElementById("flourRow" + i);
-        if (row && row.style.display === "none") continue;
-        if (flourMode[String(i)] === "pct" && (document.getElementById("pct" + i)?.value ?? "").toString().trim() !== "") {
-          setGramsFromPct(String(i));
-        } else if (flourMode[String(i)] === "g" && (document.getElementById("m" + i)?.value ?? "").toString().trim() !== "") {
-          setPctFromGrams(String(i));
-        }
-      }
-
-      if (flourMode["R"] === "pct" && (document.getElementById("pctR")?.value ?? "").toString().trim() !== "") {
-        setGramsFromPct("R");
-      } else if (flourMode["R"] === "g" && (document.getElementById("mR")?.value ?? "").toString().trim() !== "") {
-        setPctFromGrams("R");
-      }
-    }
-  }
-
+  // gluten witalny
   const Gprod = num("glutenProd");
   const gG = Gprod * 0.8;
   setValue("gG", gG);
 
-  let totalFlourBlend = 0;    // mąki (w tym żytnia), bez glutenu witalnego
-  let sumFlourGluten = 0;     // gluten strukturalny z mąk (żytnia = 0)
+  let totalFlourBlend = 0; // mąki (w tym żytnia), bez glutenu witalnego
+  let sumFlourGluten = 0;  // gluten strukturalny z mąk (żytnia = 0)
 
-  // mąki 1..5 (liczą się normalnie)
+  // mąki 1..5
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const row = document.getElementById("flourRow" + i);
     if (row && row.style.display === "none") {
@@ -665,20 +692,23 @@ function recalc() {
     setValue("g" + i, gi);
   }
 
-  // żytnia: dodaj do masy, ale NIE dodawaj do glutenu
+  // żytnia: dodaj do masy mąk, ale nie do glutenu
   const mR = num("mR");
   totalFlourBlend += mR;
 
-  // Masa mąki = mąki + gluten
+  // komunikat o brakującej mące (mąki bez glutenu witalnego)
+  updateMissingFlourWarning(totalFlourBlend);
+
+  // łączna masa "mąki" w rozumieniu kalkulatora = mąki + gluten witalny
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
   const glutenPct = sumDry > 0 ? (sumGluten / sumDry * 100) : NaN;
 
-  setText("sumDryDisplay", sumDry);
-  setText("sumGlutenDisplay", sumGluten);
+  setText("sumDryDisplay", sumDry, 1);
+  setText("sumGlutenDisplay", sumGluten, 1);
   setText("glutenPercentDisplay", glutenPct, 2);
 
-  // Zaczyn
+  // zaczyn
   const L = num("levain"), Lh = num("levainHydro");
   let levFlour = 0, levWater = 0;
 
@@ -687,12 +717,12 @@ function recalc() {
     levWater = L - levFlour;
   }
 
-  setText("levainFlourDisplay", levFlour);
-  setText("levainWaterDisplay", levWater);
+  setText("levainFlourDisplay", levFlour, 1);
+  setText("levainWaterDisplay", levWater, 1);
 
-  // Hydracja
+  // hydracja
   const totalFlour = sumDry + levFlour;
-  setText("totalFlourDisplay", totalFlour);
+  setText("totalFlourDisplay", totalFlour, 1);
 
   hydroSync = true;
 
@@ -707,7 +737,7 @@ function recalc() {
         ? Math.max(0, totalWater - levWater)
         : NaN;
 
-      setText("totalWaterDisplay", totalWater);
+      setText("totalWaterDisplay", totalWater, 1);
       setValue("addedWater", addedWater, 1);
       localStorage.setItem("chleb_addedWater", document.getElementById("addedWater").value);
     } else {
@@ -715,7 +745,7 @@ function recalc() {
       const totalWater = levWater + aw;
       const hydro = totalWater / totalFlour * 100;
 
-      setText("totalWaterDisplay", totalWater);
+      setText("totalWaterDisplay", totalWater, 1);
       setValue("targetHydro", hydro, 1);
       localStorage.setItem("chleb_targetHydro", document.getElementById("targetHydro").value);
     }
@@ -725,69 +755,11 @@ function recalc() {
 
   hydroSync = false;
 
-  // Sól: % z totalDry
+  // sól: % z totalDry
   const T = num("totalDry");
   const saltPct = num("saltPct");
   const salt = (T > 0 && saltPct > 0) ? (T * saltPct / 100) : NaN;
   setValue("salt", salt, 1);
-}
-
-/* SKALOWANIE */
-function updateScaleButton() {
-  const T = num("totalDry");
-  const btn = document.getElementById("scaleBtn");
-  if (!btn) return;
-
-  btn.innerHTML = (T > 0)
-    ? `Przeskaluj do zamierzonej masy<br>${T}&nbsp;g`
-    : "Przeskaluj";
-}
-
-function scaleFlours() {
-  const T = num("totalDry");
-  const G = num("glutenProd");
-
-  if (T <= 0) {
-    alert("Najpierw ustaw masę bazową w sekcji 1.");
-    return;
-  }
-
-  let F = 0;
-  for (let i = 1; i <= MAX_FLOURS; i++) {
-    const row = document.getElementById("flourRow" + i);
-    if (row && row.style.display === "none") continue;
-    F += num("m" + i);
-  }
-  F += num("mR");
-
-  if (F <= 0) {
-    alert("Najpierw wpisz ilości mąk.");
-    return;
-  }
-
-  const flourTarget = T - G;
-  if (flourTarget < 0) {
-    alert("Nie można przeskalować — ilość glutenu przekracza masę docelową.");
-    return;
-  }
-
-  const k = flourTarget / F;
-
-  for (let i = 1; i <= MAX_FLOURS; i++) {
-    const row = document.getElementById("flourRow" + i);
-    if (row && row.style.display === "none") continue;
-    const mi = num("m" + i);
-    setValue("m" + i, mi * k);
-    localStorage.setItem("chleb_m" + i, document.getElementById("m" + i).value);
-    setMode(String(i), "g");
-  }
-
-  const mr = num("mR");
-  setValue("mR", mr * k);
-  localStorage.setItem("chleb_mR", document.getElementById("mR").value);
-  setMode("R", "g");
-
-  recalc();
 }
 
 /* RESET */
@@ -834,7 +806,11 @@ function clearFields() {
   const summary = document.getElementById("recipeSummary");
   if (summary) summary.value = "";
 
-  updateScaleButton();
+  const pw = document.getElementById("percentWarning");
+  if (pw) pw.style.display = "none";
+  const mw = document.getElementById("missingFlourWarning");
+  if (mw) mw.style.display = "none";
+
   recalc();
 }
 
@@ -876,10 +852,8 @@ function generateRecipe() {
     const name = (document.getElementById("flourName" + i)?.value || `Mąka ${i}`);
     if (mi > 0) lines.push(`- ${name}: ${mi.toFixed(1)} g (białko: ${pi.toFixed(1)} g/100 g)`);
   }
-
-  const mR = num("mR");
-  if (mR > 0) lines.push(`- Mąka żytnia: ${mR.toFixed(1)} g`);
-
+  const mr = num("mR");
+  if (mr > 0) lines.push(`- Mąka żytnia: ${mr.toFixed(1)} g`);
   if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
 
   lines.push("\nZawartość glutenu:");
@@ -905,50 +879,95 @@ function generateRecipe() {
   document.getElementById("recipeSummary").value = lines.join("\n");
 }
 
-/* SERVICE WORKER */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js")
-      .catch(err => console.error("SW registration failed:", err));
-  });
-}
-
-/* INIT */
-function bindPercentAndGramsEvents() {
+/* Obsługa inputów % i g */
+function bindFlourInputs() {
+  // 1..5
   for (let i = 1; i <= MAX_FLOURS; i++) {
-    const m = document.getElementById("m" + i);
-    const pct = document.getElementById("pct" + i);
+    const key = String(i);
+    const mEl = document.getElementById("m" + i);
+    const pctEl = document.getElementById("pct" + i);
 
-    if (m) {
-      m.addEventListener("input", () => {
+    if (mEl) {
+      mEl.addEventListener("input", () => {
         if (percentSync) return;
-        setMode(String(i), "g");
-        setPctFromGrams(String(i));
-        localStorage.setItem("chleb_m" + i, m.value);
+
+        const target = flourTargetMass();
+        const val = num(mId(key));
+
+        // jeśli użytkownik wpisze całą masę docelową -> 100% i wyzeruj resztę
+        if (target > 0 && val >= target - 1e-9) {
+          percentSync = true;
+          setValue(mId(key), target, 1);
+          setValue(pctId(key), 100, 1);
+          percentSync = false;
+          zeroOthers(key);
+          recalc();
+          return;
+        }
+
+        // normalne: przelicz % i ewentualnie przeskaluj resztę
+        pctFromGrams(key);
+        normalizeGrams(key);
+        // po ewentualnym skalowaniu przelicz % dla wszystkich
+        for (const k of activeKeys()) pctFromGrams(k);
+
         recalc();
       });
     }
 
-    if (pct) {
-      pct.addEventListener("input", () => {
+    if (pctEl) {
+      pctEl.addEventListener("input", () => {
         if (percentSync) return;
-        setMode(String(i), "pct");
-        setGramsFromPct(String(i));
-        localStorage.setItem("chleb_pct" + i, pct.value);
+
+        const val = num(pctId(key));
+
+        // jeśli użytkownik wpisze 100% -> wyzeruj resztę
+        if (val >= 100 - 1e-9) {
+          percentSync = true;
+          setValue(pctId(key), 100, 1);
+          percentSync = false;
+          zeroOthers(key);
+          gramsFromPct(key);
+          recalc();
+          return;
+        }
+
+        // normalne: przelicz g i ewentualnie przeskaluj resztę
+        gramsFromPct(key);
+        normalizePercents(key);
+        // po ewentualnym skalowaniu przelicz gramy dla wszystkich
+        for (const k of activeKeys()) gramsFromPct(k);
+
         recalc();
       });
     }
   }
 
+  // Rye
   const mR = document.getElementById("mR");
   const pctR = document.getElementById("pctR");
 
   if (mR) {
     mR.addEventListener("input", () => {
       if (percentSync) return;
-      setMode("R", "g");
-      setPctFromGrams("R");
-      localStorage.setItem("chleb_mR", mR.value);
+
+      const target = flourTargetMass();
+      const val = num("mR");
+
+      if (target > 0 && val >= target - 1e-9) {
+        percentSync = true;
+        setValue("mR", target, 1);
+        setValue("pctR", 100, 1);
+        percentSync = false;
+        zeroOthers("R");
+        recalc();
+        return;
+      }
+
+      pctFromGrams("R");
+      normalizeGrams("R");
+      for (const k of activeKeys()) pctFromGrams(k);
+
       recalc();
     });
   }
@@ -956,26 +975,48 @@ function bindPercentAndGramsEvents() {
   if (pctR) {
     pctR.addEventListener("input", () => {
       if (percentSync) return;
-      setMode("R", "pct");
-      setGramsFromPct("R");
-      localStorage.setItem("chleb_pctR", pctR.value);
+
+      const val = num("pctR");
+
+      if (val >= 100 - 1e-9) {
+        percentSync = true;
+        setValue("pctR", 100, 1);
+        percentSync = false;
+        zeroOthers("R");
+        gramsFromPct("R");
+        recalc();
+        return;
+      }
+
+      gramsFromPct("R");
+      normalizePercents("R");
+      for (const k of activeKeys()) gramsFromPct(k);
+
       recalc();
     });
   }
+
+  // jeśli zmienia się masa bazowa albo gluten: przelicz gramy z aktualnych %
+  const totalDry = document.getElementById("totalDry");
+  const gluten = document.getElementById("glutenProd");
+  const onBaseChange = () => {
+    if (percentSync) return;
+    for (const k of activeKeys()) gramsFromPct(k);
+    recalc();
+  };
+  if (totalDry) totalDry.addEventListener("input", onBaseChange);
+  if (gluten) gluten.addEventListener("input", onBaseChange);
 }
 
+/* INIT */
 restoreFields();
-loadFlourModes();
 loadFlourCount();
 updateFlourVisibility();
 setupAutosave();
-bindPercentAndGramsEvents();
+bindFlourInputs();
 recalc();
-updateScaleButton();
 
-/* Kliknięcia */
-document.getElementById("scaleBtn").addEventListener("click", scaleFlours);
-
+/* Dodaj mąkę */
 document.getElementById("addFlourBtn").addEventListener("click", () => {
   if (flourCount < MAX_FLOURS) {
     flourCount++;
@@ -984,6 +1025,14 @@ document.getElementById("addFlourBtn").addEventListener("click", () => {
     recalc();
   }
 });
+
+/* SERVICE WORKER */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js")
+      .catch(err => console.error("SW registration failed:", err));
+  });
+}
 </script>
 
 </body>
