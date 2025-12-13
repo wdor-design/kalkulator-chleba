@@ -50,18 +50,13 @@
       margin-bottom: 1rem;
       background: #fff;
 
-      /* optyczne „wycentrowanie” zawartości sekcji */
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
     }
 
-    /* Nagłówki w sekcjach – mniej „ciągną” w dół */
-    .section h2 {
-      margin: 0.2rem 0;
-    }
+    .section h2 { margin: 0.2rem 0; }
 
-    /* minimalnie mniejszy font opisów */
     label, .field-label {
       font-size: 0.82rem;
       color: #222;
@@ -101,7 +96,6 @@
       cursor: default;
     }
 
-    /* GRID: spójny odstęp pionowy */
     .grid {
       display: grid;
       grid-template-columns: 1.6fr 170px;
@@ -136,13 +130,12 @@
       white-space: normal;
       width: 100%;
       box-sizing: border-box;
-      margin: 0; /* odstępy robi grid/flex */
+      margin: 0;
     }
 
     .btn:hover { background: #e8e8e8; }
     .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-    /* Przyciski obok siebie (sekcja 6) */
     .btn-row {
       display: flex;
       gap: var(--v-gap);
@@ -151,7 +144,7 @@
     }
     .btn-row .btn {
       flex: 1 1 0;
-      width: auto; /* nadpisuje width:100% w flexie */
+      width: auto;
     }
 
     .output {
@@ -168,19 +161,17 @@
     .hint {
       font-size: 0.8rem;
       color: #555;
-      margin-bottom: 0; /* sekcja ma gap, więc nie dokładamy marginesów */
+      margin-bottom: 0;
     }
 
     /* ===== TABELA MĄK ===== */
-
-    /* Kontener tabeli: dzięki temu gap sekcji nie działa między wierszami */
     .flour-table { display: block; }
 
     .flour-row {
       display: grid;
       grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr 0.9fr;
       gap: 0.3rem;
-      margin-bottom: 0.3rem; /* „stary” zwarty odstęp */
+      margin-bottom: 0.3rem;
       max-width: 900px;
       align-items: center;
     }
@@ -190,13 +181,11 @@
       margin-bottom: 0.3rem;
     }
 
-    /* Ujednolicamy wysokość pól w tabeli */
     .flour-row input[type="text"],
     .flour-row input[type="number"]{
       height: 2.1rem;
     }
 
-    /* Div wyglądający jak input (dla „Gluten witalny”) */
     .fake-input{
       height: 2.1rem;
       width: 100%;
@@ -209,7 +198,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      white-space: normal; /* pozwala na 2 linie */
+      white-space: normal;
       text-align: center;
     }
 
@@ -217,6 +206,18 @@
       font-size: 0.65rem;
       line-height: 1.05;
       text-align: center;
+    }
+
+    /* Walidacja sumy % */
+    .input-error{
+      outline: 2px solid #d33;
+    }
+    #percentWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top: 0.25rem;
+      max-width: 900px;
     }
 
     #recipeSummary {
@@ -258,7 +259,6 @@
     Jeśli łączna masa mąki różni się od podanej powyżej masy bazowej, użyj przycisku „Przeskaluj”, aby automatycznie dostosować ilości mąk.
   </p>
 
-  <!-- WAŻNE: owijamy tabelę, żeby gap z .section nie rozpychał wierszy -->
   <div class="flour-table">
 
     <div class="flour-row flour-header">
@@ -272,7 +272,7 @@
     <div class="flour-row" id="flourRow1">
       <input type="text" id="flourName1" placeholder="np. T110" />
       <input type="number" id="m1" step="1" min="0" />
-      <input type="number" id="pct1" readonly />
+      <input type="number" id="pct1" step="0.1" min="0" max="100" />
       <input type="number" id="p1" step="0.1" min="0" />
       <input type="number" id="g1" readonly />
     </div>
@@ -280,7 +280,7 @@
     <div class="flour-row" id="flourRow2">
       <input type="text" id="flourName2" placeholder="np. T80 ancient" />
       <input type="number" id="m2" step="1" min="0" />
-      <input type="number" id="pct2" readonly />
+      <input type="number" id="pct2" step="0.1" min="0" max="100" />
       <input type="number" id="p2" step="0.1" min="0" />
       <input type="number" id="g2" readonly />
     </div>
@@ -288,26 +288,35 @@
     <div class="flour-row" id="flourRow3">
       <input type="text" id="flourName3" placeholder="np. T65" />
       <input type="number" id="m3" step="1" min="0" />
-      <input type="number" id="pct3" readonly />
+      <input type="number" id="pct3" step="0.1" min="0" max="100" />
       <input type="number" id="p3" step="0.1" min="0" />
       <input type="number" id="g3" readonly />
     </div>
 
-    <!-- Dynamiczne wiersze 4 i 5 (nad glutenem) -->
+    <!-- Dynamiczne wiersze 4 i 5 (nad żytnią i glutenem) -->
     <div class="flour-row" id="flourRow4" style="display:none;">
       <input type="text" id="flourName4" placeholder="np. T150" />
       <input type="number" id="m4" step="1" min="0" />
-      <input type="number" id="pct4" readonly />
+      <input type="number" id="pct4" step="0.1" min="0" max="100" />
       <input type="number" id="p4" step="0.1" min="0" />
       <input type="number" id="g4" readonly />
     </div>
 
     <div class="flour-row" id="flourRow5" style="display:none;">
-      <input type="text" id="flourName5" placeholder="np. żytnia" />
+      <input type="text" id="flourName5" placeholder="np. Manitoba" />
       <input type="number" id="m5" step="1" min="0" />
-      <input type="number" id="pct5" readonly />
+      <input type="number" id="pct5" step="0.1" min="0" max="100" />
       <input type="number" id="p5" step="0.1" min="0" />
       <input type="number" id="g5" readonly />
+    </div>
+
+    <!-- NOWY WIERSZ: ŻYTNIA (stały, bez białka/glutenu) -->
+    <div class="flour-row" id="ryeRow">
+      <div class="fake-input gluten-name">Mąka<br>żytnia</div>
+      <input type="number" id="mR" step="1" min="0" />
+      <input type="number" id="pctR" step="0.1" min="0" max="100" />
+      <input type="text" id="pR" value="—" readonly />
+      <input type="text" id="gR" value="—" readonly />
     </div>
 
     <!-- Gluten (zawsze na dole) -->
@@ -320,6 +329,8 @@
     </div>
 
   </div><!-- /.flour-table -->
+
+  <div id="percentWarning">Suma udziałów nie może przekroczyć 100%.</div>
 
   <!-- Przycisk dodawania mąki (pod tabelą, po prawej) -->
   <div class="grid" style="margin-top: var(--v-gap);">
@@ -414,7 +425,7 @@
 /* HELPERY */
 function num(id) {
   const el = document.getElementById(id);
-  const v = parseFloat((el.value || "").replace(",", "."));
+  const v = parseFloat((el?.value || "").replace(",", "."));
   return isNaN(v) ? 0 : v;
 }
 
@@ -433,8 +444,101 @@ function setText(id, val, decimals = 1) {
 }
 
 /* DWUKIERUNKOWA HYDRACJA */
-let lastHydroEdit = "target";   // "target" albo "water"
-let hydroSync = false;          // blokada przed pętlą
+let lastHydroEdit = "target";
+let hydroSync = false;
+
+/* % ↔ g dla mąk */
+let percentSync = false;
+const flourMode = {}; // "pct" albo "g" per id ("1".."5","R")
+
+function loadFlourModes() {
+  for (const k of ["1","2","3","4","5","R"]) {
+    const saved = localStorage.getItem("chleb_mode_" + k);
+    if (saved === "pct" || saved === "g") flourMode[k] = saved;
+  }
+}
+
+function setMode(k, mode) {
+  flourMode[k] = mode;
+  localStorage.setItem("chleb_mode_" + k, mode);
+}
+
+function flourTargetMass() {
+  const T = num("totalDry");
+  const G = num("glutenProd");
+  if (T <= 0) return 0;
+  return Math.max(0, T - G); // procenty rozkładamy na mąki (bez glutenu witalnego)
+}
+
+function sumPercentsVisible(exceptKey = null) {
+  let s = 0;
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display === "none") continue;
+    const key = String(i);
+    if (key === exceptKey) continue;
+    s += num("pct" + i);
+  }
+  if (exceptKey !== "R") s += num("pctR");
+  return s;
+}
+
+function validatePercentLimit(exceptKey = null) {
+  const warn = document.getElementById("percentWarning");
+
+  let total = sumPercentsVisible(exceptKey);
+  if (exceptKey) {
+    total += (exceptKey === "R") ? num("pctR") : num("pct" + exceptKey);
+  }
+
+  const ok = total <= 100 + 1e-9;
+
+  // wyczyść błędy
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const el = document.getElementById("pct" + i);
+    if (el) el.classList.remove("input-error");
+  }
+  const elR = document.getElementById("pctR");
+  if (elR) elR.classList.remove("input-error");
+
+  if (!ok) {
+    const badEl = (exceptKey === "R") ? document.getElementById("pctR") : document.getElementById("pct" + exceptKey);
+    if (badEl) badEl.classList.add("input-error");
+  }
+
+  if (warn) warn.style.display = ok ? "none" : "block";
+  return ok;
+}
+
+function setGramsFromPct(key) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  if (!validatePercentLimit(key)) return;
+
+  const pct = (key === "R") ? num("pctR") : num("pct" + key);
+  const grams = target * (pct / 100);
+
+  percentSync = true;
+  if (key === "R") setValue("mR", grams, 1);
+  else setValue("m" + key, grams, 1);
+  percentSync = false;
+}
+
+function setPctFromGrams(key) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  const grams = (key === "R") ? num("mR") : num("m" + key);
+  const pct = (grams / target) * 100;
+
+  percentSync = true;
+  if (key === "R") setValue("pctR", pct, 1);
+  else setValue("pct" + key, pct, 1);
+  percentSync = false;
+
+  validatePercentLimit(key);
+}
 
 /* DYNAMICZNE MĄKI */
 const MAX_FLOURS = 5;
@@ -466,12 +570,13 @@ const fieldsToSave = [
   "saltPct",
   "flourName1","flourName2","flourName3","flourName4","flourName5",
   "m1","m2","m3","m4","m5",
+  "pct1","pct2","pct3","pct4","pct5",
   "p1","p2","p3","p4","p5",
+  "mR","pctR",
   "glutenProd",
   "levain","levainHydro",
   "targetHydro",
   "addedWater"
-  // salt (g) jest wyliczany
 ];
 
 function restoreFields() {
@@ -482,7 +587,6 @@ function restoreFields() {
     if (saved !== null) el.value = saved;
   });
 
-  // Domyślne 2% jeśli puste
   const saltPctEl = document.getElementById("saltPct");
   if (saltPctEl && (saltPctEl.value === "" || saltPctEl.value === null)) {
     saltPctEl.value = "2";
@@ -499,7 +603,6 @@ function setupAutosave() {
         if (id === "targetHydro") lastHydroEdit = "target";
         if (id === "addedWater") lastHydroEdit = "water";
       }
-
       localStorage.setItem("chleb_" + id, el.value);
       recalc();
       updateScaleButton();
@@ -510,18 +613,48 @@ function setupAutosave() {
 function clearStoredFields() {
   fieldsToSave.forEach(id => localStorage.removeItem("chleb_" + id));
   localStorage.removeItem("chleb_flourCount");
+  for (const k of ["1","2","3","4","5","R"]) localStorage.removeItem("chleb_mode_" + k);
 }
 
 /* OBLICZENIA */
 function recalc() {
+  // jeśli użytkownik pracuje w %, przelicz gramy przed resztą
+  if (!percentSync) {
+    const target = flourTargetMass();
+    if (target > 0) {
+      for (let i = 1; i <= MAX_FLOURS; i++) {
+        const row = document.getElementById("flourRow" + i);
+        if (row && row.style.display === "none") continue;
+        if (flourMode[String(i)] === "pct" && (document.getElementById("pct" + i)?.value ?? "").toString().trim() !== "") {
+          setGramsFromPct(String(i));
+        } else if (flourMode[String(i)] === "g" && (document.getElementById("m" + i)?.value ?? "").toString().trim() !== "") {
+          setPctFromGrams(String(i));
+        }
+      }
+
+      if (flourMode["R"] === "pct" && (document.getElementById("pctR")?.value ?? "").toString().trim() !== "") {
+        setGramsFromPct("R");
+      } else if (flourMode["R"] === "g" && (document.getElementById("mR")?.value ?? "").toString().trim() !== "") {
+        setPctFromGrams("R");
+      }
+    }
+  }
+
   const Gprod = num("glutenProd");
   const gG = Gprod * 0.8;
   setValue("gG", gG);
 
-  let totalFlourBlend = 0;
-  let sumFlourGluten = 0;
+  let totalFlourBlend = 0;    // mąki (w tym żytnia), bez glutenu witalnego
+  let sumFlourGluten = 0;     // gluten strukturalny z mąk (żytnia = 0)
 
+  // mąki 1..5 (liczą się normalnie)
   for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display === "none") {
+      setValue("g" + i, "");
+      continue;
+    }
+
     const mi = num("m" + i);
     const pi = num("p" + i);
     const gi = mi * pi / 100;
@@ -532,15 +665,9 @@ function recalc() {
     setValue("g" + i, gi);
   }
 
-  // Udziały procentowe tylko dla mąk
-  if (totalFlourBlend > 0) {
-    for (let i = 1; i <= MAX_FLOURS; i++) {
-      const mi = num("m" + i);
-      setValue("pct" + i, mi / totalFlourBlend * 100, 1);
-    }
-  } else {
-    for (let i = 1; i <= MAX_FLOURS; i++) setValue("pct" + i, "");
-  }
+  // żytnia: dodaj do masy, ale NIE dodawaj do glutenu
+  const mR = num("mR");
+  totalFlourBlend += mR;
 
   // Masa mąki = mąki + gluten
   const sumDry = totalFlourBlend + Gprod;
@@ -626,14 +753,18 @@ function scaleFlours() {
   }
 
   let F = 0;
-  for (let i = 1; i <= MAX_FLOURS; i++) F += num("m" + i);
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display === "none") continue;
+    F += num("m" + i);
+  }
+  F += num("mR");
 
   if (F <= 0) {
     alert("Najpierw wpisz ilości mąk.");
     return;
   }
 
-  // Gluten bez zmian
   const flourTarget = T - G;
   if (flourTarget < 0) {
     alert("Nie można przeskalować — ilość glutenu przekracza masę docelową.");
@@ -643,10 +774,18 @@ function scaleFlours() {
   const k = flourTarget / F;
 
   for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display === "none") continue;
     const mi = num("m" + i);
     setValue("m" + i, mi * k);
     localStorage.setItem("chleb_m" + i, document.getElementById("m" + i).value);
+    setMode(String(i), "g");
   }
+
+  const mr = num("mR");
+  setValue("mR", mr * k);
+  localStorage.setItem("chleb_mR", document.getElementById("mR").value);
+  setMode("R", "g");
 
   recalc();
 }
@@ -655,7 +794,6 @@ function scaleFlours() {
 function clearFields() {
   clearStoredFields();
 
-  // Przywróć 3 mąki
   flourCount = 3;
   saveFlourCount();
   updateFlourVisibility();
@@ -664,7 +802,9 @@ function clearFields() {
     "totalDry","saltPct",
     "flourName1","flourName2","flourName3","flourName4","flourName5",
     "m1","m2","m3","m4","m5",
+    "pct1","pct2","pct3","pct4","pct5",
     "p1","p2","p3","p4","p5",
+    "mR","pctR",
     "glutenProd",
     "levain","levainHydro",
     "targetHydro","addedWater"
@@ -673,12 +813,10 @@ function clearFields() {
     if (el) el.value = "";
   });
 
-  // Domyślne 2% po resecie
   const saltPctEl = document.getElementById("saltPct");
   if (saltPctEl) saltPctEl.value = "2";
 
   for (let i = 1; i <= MAX_FLOURS; i++) {
-    setValue("pct" + i, "");
     setValue("g" + i, "");
   }
   setValue("gG", "");
@@ -730,11 +868,18 @@ function generateRecipe() {
 
   lines.push("Kompozycja mąk:");
   for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display === "none") continue;
+
     const mi = num("m" + i);
     const pi = num("p" + i);
     const name = (document.getElementById("flourName" + i)?.value || `Mąka ${i}`);
     if (mi > 0) lines.push(`- ${name}: ${mi.toFixed(1)} g (białko: ${pi.toFixed(1)} g/100 g)`);
   }
+
+  const mR = num("mR");
+  if (mR > 0) lines.push(`- Mąka żytnia: ${mR.toFixed(1)} g`);
+
   if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
 
   lines.push("\nZawartość glutenu:");
@@ -769,10 +914,62 @@ if ("serviceWorker" in navigator) {
 }
 
 /* INIT */
+function bindPercentAndGramsEvents() {
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const m = document.getElementById("m" + i);
+    const pct = document.getElementById("pct" + i);
+
+    if (m) {
+      m.addEventListener("input", () => {
+        if (percentSync) return;
+        setMode(String(i), "g");
+        setPctFromGrams(String(i));
+        localStorage.setItem("chleb_m" + i, m.value);
+        recalc();
+      });
+    }
+
+    if (pct) {
+      pct.addEventListener("input", () => {
+        if (percentSync) return;
+        setMode(String(i), "pct");
+        setGramsFromPct(String(i));
+        localStorage.setItem("chleb_pct" + i, pct.value);
+        recalc();
+      });
+    }
+  }
+
+  const mR = document.getElementById("mR");
+  const pctR = document.getElementById("pctR");
+
+  if (mR) {
+    mR.addEventListener("input", () => {
+      if (percentSync) return;
+      setMode("R", "g");
+      setPctFromGrams("R");
+      localStorage.setItem("chleb_mR", mR.value);
+      recalc();
+    });
+  }
+
+  if (pctR) {
+    pctR.addEventListener("input", () => {
+      if (percentSync) return;
+      setMode("R", "pct");
+      setGramsFromPct("R");
+      localStorage.setItem("chleb_pctR", pctR.value);
+      recalc();
+    });
+  }
+}
+
 restoreFields();
+loadFlourModes();
 loadFlourCount();
 updateFlourVisibility();
 setupAutosave();
+bindPercentAndGramsEvents();
 recalc();
 updateScaleButton();
 
