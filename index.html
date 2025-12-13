@@ -263,7 +263,8 @@
       <input type="number" id="m1" step="1" min="0" />
       <input type="number" id="pct1" step="0.1" min="0" max="100" />
       <input type="number" id="p1" step="0.1" min="0" />
-      <input type="number" id="g1" readonly />
+      <!-- ✅ placeholder = "–" dla stanu startowego -->
+      <input type="number" id="g1" readonly placeholder="–" />
     </div>
 
     <div class="flour-row" id="flourRow2">
@@ -271,7 +272,7 @@
       <input type="number" id="m2" step="1" min="0" />
       <input type="number" id="pct2" step="0.1" min="0" max="100" />
       <input type="number" id="p2" step="0.1" min="0" />
-      <input type="number" id="g2" readonly />
+      <input type="number" id="g2" readonly placeholder="–" />
     </div>
 
     <div class="flour-row" id="flourRow3">
@@ -279,7 +280,7 @@
       <input type="number" id="m3" step="1" min="0" />
       <input type="number" id="pct3" step="0.1" min="0" max="100" />
       <input type="number" id="p3" step="0.1" min="0" />
-      <input type="number" id="g3" readonly />
+      <input type="number" id="g3" readonly placeholder="–" />
     </div>
 
     <!-- Dynamiczne wiersze 4 i 5 -->
@@ -288,7 +289,7 @@
       <input type="number" id="m4" step="1" min="0" />
       <input type="number" id="pct4" step="0.1" min="0" max="100" />
       <input type="number" id="p4" step="0.1" min="0" />
-      <input type="number" id="g4" readonly />
+      <input type="number" id="g4" readonly placeholder="–" />
     </div>
 
     <div class="flour-row" id="flourRow5" style="display:none;">
@@ -296,7 +297,7 @@
       <input type="number" id="m5" step="1" min="0" />
       <input type="number" id="pct5" step="0.1" min="0" max="100" />
       <input type="number" id="p5" step="0.1" min="0" />
-      <input type="number" id="g5" readonly />
+      <input type="number" id="g5" readonly placeholder="–" />
     </div>
 
     <!-- Żytnia (stały wiersz) -->
@@ -315,8 +316,8 @@
       <input type="number" id="glutenProd" step="0.5" min="0" />
       <input type="text" id="pctG" value="—" readonly />
       <input type="number" id="pG" value="80" readonly />
-      <!-- gG ma być 0,0 -->
-      <input type="number" id="gG" readonly />
+      <!-- ✅ placeholder = "–" dla stanu startowego -->
+      <input type="number" id="gG" readonly placeholder="–" />
     </div>
 
   </div><!-- /.flour-table -->
@@ -397,7 +398,8 @@
     <input type="number" id="saltPct" step="0.1" min="0" />
 
     <label for="salt">Dodatek soli [g]</label>
-    <input type="number" id="salt" readonly />
+    <!-- ✅ placeholder, bo input number nie przyjmie "–" jako value -->
+    <input type="number" id="salt" readonly placeholder="–" />
   </div>
 </div>
 
@@ -721,16 +723,20 @@ function normalizeGrams(lockedKey) {
 /* OBLICZENIA */
 function recalc() {
   const T = num("totalDry");
+  const base = T > 0;
 
-  // gluten witalny (wyjściowa kolumna gG ma być 0,0)
+  // gluten witalny
   const Gprod = num("glutenProd");
   const gG = Gprod * 0.8;
-  setValue("gG", gG);
+
+  // ✅ stan startowy: gG ma być "–" (czyli puste + placeholder)
+  if (base) setValue("gG", gG, 1);
+  else setValue("gG", "");
 
   let totalFlourBlend = 0; // mąki (w tym żytnia), bez glutenu witalnego
   let sumFlourGluten = 0;  // gluten strukturalny z mąk (żytnia = 0)
 
-  // mąki 1..5 (kolumna gX ma być 0,0 nawet gdy puste)
+  // mąki 1..5
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const row = document.getElementById("flourRow" + i);
     if (row && row.style.display === "none") {
@@ -745,7 +751,9 @@ function recalc() {
     totalFlourBlend += mi;
     sumFlourGluten += gi;
 
-    setValue("g" + i, gi);
+    // ✅ stan startowy: kolumna "Gluten z mąki" ma być "–"
+    if (base) setValue("g" + i, gi, 1);
+    else setValue("g" + i, "");
   }
 
   // żytnia: dodaj do masy mąk, ale nie do glutenu
@@ -759,10 +767,8 @@ function recalc() {
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
 
-  // Jeśli nic nie wpisane i brak masy bazowej -> pokazuj kreski
-  const hasAnyForSection2 = (T > 0) || (sumDry > 0) || (sumGluten > 0);
-
-  if (!hasAnyForSection2) {
+  // ✅ PODSUMOWANIA: przed bazą -> "–", po bazie -> "0,0"
+  if (!base) {
     setText("sumDryDisplay", NaN);
     setText("sumGlutenDisplay", NaN);
     setText("glutenPercentDisplay", NaN);
@@ -770,13 +776,9 @@ function recalc() {
     setText("sumDryDisplay", sumDry, 1);
     setText("sumGlutenDisplay", sumGluten, 1);
 
-    // ✅ % ma być 0,0 gdy wpisana masa bazowa, nawet jeśli sumDry = 0
-    let glutenPct;
-    if (sumDry > 0) glutenPct = (sumGluten / sumDry) * 100;
-    else glutenPct = (T > 0 ? 0 : NaN);
-
-    if (T > 0 && (!isFinite(glutenPct) || isNaN(glutenPct))) glutenPct = 0;
-    setText("glutenPercentDisplay", glutenPct, 2);
+    // ✅ 0,0 (1 miejsce), nie 0,00
+    const glutenPct = (sumDry > 0) ? (sumGluten / sumDry * 100) : 0;
+    setText("glutenPercentDisplay", glutenPct, 1);
   }
 
   // zaczyn
@@ -788,37 +790,49 @@ function recalc() {
     levWater = L - levFlour;
   }
 
-  setText("levainFlourDisplay", (L > 0 && Lh > 0) ? levFlour : NaN, 1);
-  setText("levainWaterDisplay", (L > 0 && Lh > 0) ? levWater : NaN, 1);
+  // ✅ po bazie -> 0,0; przed bazą -> "–"
+  if (base) {
+    setText("levainFlourDisplay", levFlour, 1);
+    setText("levainWaterDisplay", levWater, 1);
+  } else {
+    setText("levainFlourDisplay", NaN);
+    setText("levainWaterDisplay", NaN);
+  }
 
   // hydracja
   const totalFlour = sumDry + levFlour;
-  setText("totalFlourDisplay", (hasAnyForSection2 || L > 0) ? totalFlour : NaN, 1);
+
+  // ✅ po bazie -> 0,0; przed bazą -> "–"
+  if (base) setText("totalFlourDisplay", totalFlour, 1);
+  else setText("totalFlourDisplay", NaN);
 
   hydroSync = true;
 
-  if (totalFlour > 0) {
-    if (lastHydroEdit === "target") {
-      const targetH = num("targetHydro");
-      const totalWater = (targetH > 0)
-        ? totalFlour * targetH / 100
-        : NaN;
+  if (base) {
+    if (totalFlour > 0) {
+      if (lastHydroEdit === "target") {
+        const targetH = num("targetHydro");
+        const totalWater = (targetH > 0)
+          ? totalFlour * targetH / 100
+          : 0;
 
-      const addedWater = (!isNaN(totalWater))
-        ? Math.max(0, totalWater - levWater)
-        : NaN;
+        const addedWater = Math.max(0, totalWater - levWater);
 
-      setText("totalWaterDisplay", totalWater, 1);
-      setValue("addedWater", addedWater, 1);
-      localStorage.setItem("chleb_addedWater", document.getElementById("addedWater").value);
+        setText("totalWaterDisplay", totalWater, 1);
+        setValue("addedWater", addedWater, 1);
+        localStorage.setItem("chleb_addedWater", document.getElementById("addedWater").value);
+      } else {
+        const aw = Math.max(0, num("addedWater"));
+        const totalWater = levWater + aw;
+        const hydro = totalWater / totalFlour * 100;
+
+        setText("totalWaterDisplay", totalWater, 1);
+        setValue("targetHydro", hydro, 1);
+        localStorage.setItem("chleb_targetHydro", document.getElementById("targetHydro").value);
+      }
     } else {
-      const aw = Math.max(0, num("addedWater"));
-      const totalWater = levWater + aw;
-      const hydro = totalWater / totalFlour * 100;
-
-      setText("totalWaterDisplay", totalWater, 1);
-      setValue("targetHydro", hydro, 1);
-      localStorage.setItem("chleb_targetHydro", document.getElementById("targetHydro").value);
+      // ✅ po bazie, ale totalFlour = 0 -> ma być 0,0 (a nie "–")
+      setText("totalWaterDisplay", 0, 1);
     }
   } else {
     setText("totalWaterDisplay", NaN);
@@ -828,8 +842,11 @@ function recalc() {
 
   // sól: % z totalDry
   const saltPct = num("saltPct");
-  const salt = (T > 0 && saltPct > 0) ? (T * saltPct / 100) : NaN;
-  setValue("salt", salt, 1);
+  const salt = (base && saltPct > 0) ? (T * saltPct / 100) : NaN;
+
+  // ✅ przed bazą: puste (pokazuje placeholder "–"), po bazie: wartość
+  if (base && saltPct > 0) setValue("salt", salt, 1);
+  else setValue("salt", "");
 }
 
 /* RESET */
@@ -861,6 +878,7 @@ function clearFields() {
   // wyjściowe kolumny glutenu z mąk – wyczyść/ustaw przez recalc
   for (let i = 1; i <= MAX_FLOURS; i++) setValue("g" + i, "");
   setValue("gG", "");
+  setValue("salt", "");
 
   [
     "sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
