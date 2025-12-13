@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chleb-pwa-v10';
+const CACHE_NAME = 'chleb-pwa-v11';
 
 const URLS_TO_CACHE = [
   './',
