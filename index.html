@@ -40,14 +40,25 @@
     }
 
     h1 { font-size: 1.35rem; margin: 0; }
-    h2 { font-size: 1.1rem; margin-top: 1.2rem; margin-bottom: 0.4rem; }
+    h2 { font-size: 1.1rem; }
 
+    /* SEKCJE (RAMKI) */
     .section {
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 0.8rem;
       margin-bottom: 1rem;
       background: #fff;
+
+      /* optyczne „wycentrowanie” zawartości sekcji */
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    /* Nagłówki w sekcjach – mniej „ciągną” w dół */
+    .section h2 {
+      margin: 0.2rem 0;
     }
 
     /* minimalnie mniejszy font opisów */
@@ -125,7 +136,7 @@
       white-space: normal;
       width: 100%;
       box-sizing: border-box;
-      margin: 0;              /* ważne: bez marginów — odstępy robi grid/flex */
+      margin: 0; /* odstępy robi grid/flex */
     }
 
     .btn:hover { background: #e8e8e8; }
@@ -154,12 +165,22 @@
       align-items: center;
     }
 
-    /* Tabela mąk */
+    .hint {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 0; /* sekcja ma gap, więc nie dokładamy marginesów */
+    }
+
+    /* ===== TABELA MĄK ===== */
+
+    /* Kontener tabeli: dzięki temu gap sekcji nie działa między wierszami */
+    .flour-table { display: block; }
+
     .flour-row {
       display: grid;
       grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr 0.9fr;
       gap: 0.3rem;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.3rem; /* „stary” zwarty odstęp */
       max-width: 900px;
       align-items: center;
     }
@@ -169,18 +190,34 @@
       margin-bottom: 0.3rem;
     }
 
-    .hint {
-      font-size: 0.8rem;
-      color: #555;
-      margin-bottom: 0.4rem;
+    /* Ujednolicamy wysokość pól w tabeli */
+    .flour-row input[type="text"],
+    .flour-row input[type="number"]{
+      height: 2.1rem;
     }
 
-    /* "Gluten witalny" – takie samo pole jak reszta + drobniejszy font */
-    .gluten-name {
-  font-size: 0.65rem;
-  line-height: 1.05;
-  text-align: center;
-}
+    /* Div wyglądający jak input (dla „Gluten witalny”) */
+    .fake-input{
+      height: 2.1rem;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.35rem 0.45rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: normal; /* pozwala na 2 linie */
+      text-align: center;
+    }
+
+    .gluten-name{
+      font-size: 0.65rem;
+      line-height: 1.05;
+      text-align: center;
+    }
 
     #recipeSummary {
       min-height: 150px;
@@ -190,43 +227,6 @@
     @media (max-width: 700px) {
       body { margin: 0.5rem; }
     }
-    /* Ujednolicamy wysokość pól w tabeli, żeby "fake input" był identyczny */
-.flour-row input[type="text"],
-.flour-row input[type="number"]{
-  height: 2.1rem;
-}
-
-/* Div wyglądający jak input */
-.fake-input{
-  height: 2.1rem;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.35rem 0.45rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  white-space: normal;
-}
-
-/* I tu naprawdę działa zmniejszenie fontu na iOS */
-.gluten-name{
-  font-size: 0.62rem;   /* możesz zejść do 0.6 jeśli chcesz jeszcze mniejsze */
-  line-height: 1;
-}
-/* Optymalne wycentrowanie zawartości sekcji */
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-/* Zmniejszamy „ciągnięcie w dół” przez nagłówki */
-.section h2 {
-  margin: 0.2rem 0;
-}
   </style>
 </head>
 
@@ -258,63 +258,68 @@
     Jeśli łączna masa różni się od podanej powyżej masy bazowej, użyj przycisku „Przeskaluj”, aby automatycznie dostosować ilości mąk.
   </p>
 
-  <div class="flour-row flour-header">
-    <div class="field-label">Typ</div>
-    <div class="field-label">Ilość [g]</div>
-    <div class="field-label">Udział [%]</div>
-    <div class="field-label">Białko [g/100 g]</div>
-    <div class="field-label">Gluten z mąki [g]</div>
-  </div>
+  <!-- WAŻNE: owijamy tabelę, żeby gap z .section nie rozpychał wierszy -->
+  <div class="flour-table">
 
-  <div class="flour-row" id="flourRow1">
-    <input type="text" id="flourName1" placeholder="np. T110" />
-    <input type="number" id="m1" step="1" min="0" />
-    <input type="number" id="pct1" readonly />
-    <input type="number" id="p1" step="0.1" min="0" />
-    <input type="number" id="g1" readonly />
-  </div>
+    <div class="flour-row flour-header">
+      <div class="field-label">Typ</div>
+      <div class="field-label">Ilość [g]</div>
+      <div class="field-label">Udział [%]</div>
+      <div class="field-label">Białko [g/100 g]</div>
+      <div class="field-label">Gluten z mąki [g]</div>
+    </div>
 
-  <div class="flour-row" id="flourRow2">
-    <input type="text" id="flourName2" placeholder="np. T80 ancient" />
-    <input type="number" id="m2" step="1" min="0" />
-    <input type="number" id="pct2" readonly />
-    <input type="number" id="p2" step="0.1" min="0" />
-    <input type="number" id="g2" readonly />
-  </div>
+    <div class="flour-row" id="flourRow1">
+      <input type="text" id="flourName1" placeholder="np. T110" />
+      <input type="number" id="m1" step="1" min="0" />
+      <input type="number" id="pct1" readonly />
+      <input type="number" id="p1" step="0.1" min="0" />
+      <input type="number" id="g1" readonly />
+    </div>
 
-  <div class="flour-row" id="flourRow3">
-    <input type="text" id="flourName3" placeholder="np. T65" />
-    <input type="number" id="m3" step="1" min="0" />
-    <input type="number" id="pct3" readonly />
-    <input type="number" id="p3" step="0.1" min="0" />
-    <input type="number" id="g3" readonly />
-  </div>
+    <div class="flour-row" id="flourRow2">
+      <input type="text" id="flourName2" placeholder="np. T80 ancient" />
+      <input type="number" id="m2" step="1" min="0" />
+      <input type="number" id="pct2" readonly />
+      <input type="number" id="p2" step="0.1" min="0" />
+      <input type="number" id="g2" readonly />
+    </div>
 
-  <!-- Dynamiczne wiersze 4 i 5 (nad glutenem) -->
-  <div class="flour-row" id="flourRow4" style="display:none;">
-    <input type="text" id="flourName4" placeholder="np. T150" />
-    <input type="number" id="m4" step="1" min="0" />
-    <input type="number" id="pct4" readonly />
-    <input type="number" id="p4" step="0.1" min="0" />
-    <input type="number" id="g4" readonly />
-  </div>
+    <div class="flour-row" id="flourRow3">
+      <input type="text" id="flourName3" placeholder="np. T65" />
+      <input type="number" id="m3" step="1" min="0" />
+      <input type="number" id="pct3" readonly />
+      <input type="number" id="p3" step="0.1" min="0" />
+      <input type="number" id="g3" readonly />
+    </div>
 
-  <div class="flour-row" id="flourRow5" style="display:none;">
-    <input type="text" id="flourName5" placeholder="np. żytnia" />
-    <input type="number" id="m5" step="1" min="0" />
-    <input type="number" id="pct5" readonly />
-    <input type="number" id="p5" step="0.1" min="0" />
-    <input type="number" id="g5" readonly />
-  </div>
+    <!-- Dynamiczne wiersze 4 i 5 (nad glutenem) -->
+    <div class="flour-row" id="flourRow4" style="display:none;">
+      <input type="text" id="flourName4" placeholder="np. T150" />
+      <input type="number" id="m4" step="1" min="0" />
+      <input type="number" id="pct4" readonly />
+      <input type="number" id="p4" step="0.1" min="0" />
+      <input type="number" id="g4" readonly />
+    </div>
 
-  <!-- Gluten (zawsze na dole) -->
-  <div class="flour-row" id="glutenRow">
-    <div class="fake-input gluten-name">Gluten<br>witalny</div>
-    <input type="number" id="glutenProd" step="0.5" min="0" />
-    <input type="text" id="pctG" value="—" readonly />
-    <input type="number" id="pG" value="80" readonly />
-    <input type="number" id="gG" readonly />
-  </div>
+    <div class="flour-row" id="flourRow5" style="display:none;">
+      <input type="text" id="flourName5" placeholder="np. żytnia" />
+      <input type="number" id="m5" step="1" min="0" />
+      <input type="number" id="pct5" readonly />
+      <input type="number" id="p5" step="0.1" min="0" />
+      <input type="number" id="g5" readonly />
+    </div>
+
+    <!-- Gluten (zawsze na dole) -->
+    <div class="flour-row" id="glutenRow">
+      <div class="fake-input gluten-name">Gluten<br>witalny</div>
+      <input type="number" id="glutenProd" step="0.5" min="0" />
+      <input type="text" id="pctG" value="—" readonly />
+      <input type="number" id="pG" value="80" readonly />
+      <input type="number" id="gG" readonly />
+    </div>
+
+  </div><!-- /.flour-table -->
 
   <!-- Przycisk dodawania mąki (pod tabelą, po prawej) -->
   <div class="grid" style="margin-top: var(--v-gap);">
@@ -745,7 +750,7 @@ function generateRecipe() {
 
   lines.push("\nHydracja ciasta:");
   if (targetHydro > 0) lines.push("- Docelowa hydracja: " + targetHydro.toFixed(1) + "%");
-  if (totalFlourText !== "–") lines.push("- Łączna masa mąki (mieszanka + gluten + mąka z zaczynu): " + totalFlourText + " g");
+  if (totalFlourText !== "–") lines.push("- Łączna masa mąki (mieszanka + zaczyn): " + totalFlourText + " g");
   if (totalWaterText !== "–") lines.push("- Łączna ilość wody (łącznie z zaczynem): " + totalWaterText + " g");
   if (addedWater > 0) lines.push("- Woda do dodania: " + addedWater.toFixed(1) + " g");
 
