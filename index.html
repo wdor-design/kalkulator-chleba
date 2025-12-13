@@ -15,9 +15,7 @@
   <link rel="apple-touch-icon" href="bread-icon.png" />
 
   <style>
-    :root{
-      --v-gap: 0.75rem;
-    }
+    :root{ --v-gap: 0.75rem; }
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -33,12 +31,7 @@
       margin-bottom: 0.2rem;
     }
 
-    .title-icon {
-      width: 30px;
-      height: 30px;
-      object-fit: contain;
-    }
-
+    .title-icon { width: 30px; height: 30px; object-fit: contain; }
     h1 { font-size: 1.35rem; margin: 0; }
     h2 { font-size: 1.1rem; }
 
@@ -138,11 +131,7 @@
       align-items: center;
       margin-bottom: var(--v-gap);
     }
-
-    .btn-row .btn {
-      flex: 1 1 0;
-      width: auto;
-    }
+    .btn-row .btn { flex: 1 1 0; width: auto; }
 
     .output {
       font-weight: 600;
@@ -467,7 +456,6 @@ function updateFlourVisibility() {
     if (!row) continue;
     row.style.display = (i <= flourCount) ? "" : "none";
   }
-
   const btn = document.getElementById("addFlourBtn");
   if (btn) btn.disabled = flourCount >= MAX_FLOURS;
 }
@@ -537,21 +525,21 @@ function showScaleMessage(text) {
 function updateMissingFlourWarning(totalFlourBlend) {
   const T = num("totalDry");
   const G = num("glutenProd");
-  const target = Math.max(0, T - G);
+  const targetFlour = Math.max(0, T - G);
 
   const el = document.getElementById("missingFlourWarning");
   if (!el) return;
 
-  if (target > 0 && totalFlourBlend < target - 0.5) {
-    const missing = target - totalFlourBlend;
-    el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby jej ilość wyniosła ${target.toFixed(0)} g.`;
+  if (targetFlour > 0 && totalFlourBlend < targetFlour - 0.5) {
+    const missing = targetFlour - totalFlourBlend;
+    el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby łączna masa (mąki + gluten) wyniosła ${T.toFixed(0)} g.`;
     el.style.display = "block";
   } else {
     el.style.display = "none";
   }
 }
 
-/* Masa docelowa mąk (bez glutenu witalnego) */
+/* Masa docelowa mąk BEZ glutenu (bo gluten się nie skaluje) */
 function flourTargetMass() {
   const T = num("totalDry");
   const G = num("glutenProd");
@@ -559,7 +547,7 @@ function flourTargetMass() {
   return Math.max(0, T - G);
 }
 
-/* Narzędzia listowania aktywnych kluczy */
+/* Aktywne wiersze */
 function activeKeys() {
   const keys = [];
   for (let i = 1; i <= MAX_FLOURS; i++) {
@@ -579,10 +567,8 @@ let percentSync = false;
 function gramsFromPct(k) {
   const target = flourTargetMass();
   if (target <= 0) return;
-
   const pct = num(pctId(k));
   const grams = target * (pct / 100);
-
   percentSync = true;
   setValue(mId(k), grams, 1);
   percentSync = false;
@@ -591,10 +577,8 @@ function gramsFromPct(k) {
 function pctFromGrams(k) {
   const target = flourTargetMass();
   if (target <= 0) return;
-
   const grams = num(mId(k));
   const pct = (grams / target) * 100;
-
   percentSync = true;
   setValue(pctId(k), pct, 1);
   percentSync = false;
@@ -636,9 +620,9 @@ function normalizePercents(lockedKey) {
   showScaleMessage("Przeskalowano wartości do 100%");
 }
 
-/* Skalowanie gramów do masy bazowej (bez glutenu) */
+/* Skalowanie gramów mąk do masy bazowej (gluten się nie skaluje) */
 function normalizeGrams(lockedKey) {
-  const target = flourTargetMass();
+  const target = flourTargetMass(); // T - G
   if (target <= 0) return;
 
   const keys = activeKeys();
@@ -661,7 +645,9 @@ function normalizeGrams(lockedKey) {
   }
   percentSync = false;
 
-  showScaleMessage(`Przeskalowano wartości do masy bazowej ${target.toFixed(0)} g`);
+  // ✅ Twój komunikat (z masą bazową T)
+  const T = num("totalDry");
+  showScaleMessage(`Przeskalowano mąki do masy bazowej ${T.toFixed(0)} g`);
 }
 
 /* OBLICZENIA */
@@ -696,10 +682,10 @@ function recalc() {
   const mR = num("mR");
   totalFlourBlend += mR;
 
-  // komunikat o brakującej mące (mąki bez glutenu witalnego)
+  // komunikat o brakującej mące (żeby suma mąk + gluten = T)
   updateMissingFlourWarning(totalFlourBlend);
 
-  // łączna masa "mąki" w rozumieniu kalkulatora = mąki + gluten witalny
+  // łączna masa "mąki" = mąki + gluten witalny
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
   const glutenPct = sumDry > 0 ? (sumGluten / sumDry * 100) : NaN;
@@ -788,9 +774,7 @@ function clearFields() {
   const saltPctEl = document.getElementById("saltPct");
   if (saltPctEl) saltPctEl.value = "2";
 
-  for (let i = 1; i <= MAX_FLOURS; i++) {
-    setValue("g" + i, "");
-  }
+  for (let i = 1; i <= MAX_FLOURS; i++) setValue("g" + i, "");
   setValue("gG", "");
   setValue("salt", "");
 
@@ -894,7 +878,7 @@ function bindFlourInputs() {
         const target = flourTargetMass();
         const val = num(mId(key));
 
-        // jeśli użytkownik wpisze całą masę docelową -> 100% i wyzeruj resztę
+        // jeśli użytkownik wpisze całą masę docelową mąk (T-G) -> 100% i wyzeruj resztę
         if (target > 0 && val >= target - 1e-9) {
           percentSync = true;
           setValue(mId(key), target, 1);
@@ -905,10 +889,8 @@ function bindFlourInputs() {
           return;
         }
 
-        // normalne: przelicz % i ewentualnie przeskaluj resztę
         pctFromGrams(key);
         normalizeGrams(key);
-        // po ewentualnym skalowaniu przelicz % dla wszystkich
         for (const k of activeKeys()) pctFromGrams(k);
 
         recalc();
@@ -932,10 +914,8 @@ function bindFlourInputs() {
           return;
         }
 
-        // normalne: przelicz g i ewentualnie przeskaluj resztę
         gramsFromPct(key);
         normalizePercents(key);
-        // po ewentualnym skalowaniu przelicz gramy dla wszystkich
         for (const k of activeKeys()) gramsFromPct(k);
 
         recalc();
