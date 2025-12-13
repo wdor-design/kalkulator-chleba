@@ -177,10 +177,11 @@
 
     /* "Gluten witalny" – takie samo pole jak reszta + drobniejszy font */
     .gluten-name {
-      font-size: 0.85rem;
-      line-height: 1.05;
-      padding: 0.35rem 0.45rem;
-    }
+  font-size: 0.65rem;   /* ← to jest kluczowe */
+  line-height: 1;
+  padding: 0.35rem 0.45rem; /* identyczne jak inne inputy */
+  white-space: nowrap;
+}
 
     #recipeSummary {
       min-height: 150px;
