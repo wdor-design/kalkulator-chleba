@@ -1032,10 +1032,21 @@ function bindFlourInputs() {
 
         // jeśli puste -> ma wyczyścić %
         if (raw === "") {
-          pctFromGrams(key); // to wyczyści procent
-          recalc();
-          return;
-        }
+  percentSync = true;
+
+  // wyczyść procent
+  const pctEl2 = document.getElementById(pctId(key));
+  if (pctEl2) pctEl2.value = "";
+
+  // wyczyść białko
+  const pEl2 = document.getElementById("p" + key);
+  if (pEl2) pEl2.value = "";
+
+  percentSync = false;
+
+  recalc();
+  return;
+}
 
         // niedokończone (np. "1000," lub kasowanie w trakcie) -> tylko sync i recalc
         if (/[.,]$/.test(raw) || isDeleting) {
