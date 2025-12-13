@@ -311,10 +311,11 @@
     <!-- Gluten (zawsze na dole) -->
     <div class="flour-row" id="glutenRow">
       <div class="fake-input gluten-name">Gluten<br>witalny</div>
-      <!-- ✅ poprawka: startowo 0,0 (przez value=0) -->
-      <input type="number" id="glutenProd" step="0.5" min="0" value="0" />
+      <!-- ✅ startowo PUSTE (bez 0) -->
+      <input type="number" id="glutenProd" step="0.5" min="0" />
       <input type="text" id="pctG" value="—" readonly />
       <input type="number" id="pG" value="80" readonly />
+      <!-- gG ma być 0,0 -->
       <input type="number" id="gG" readonly />
     </div>
 
@@ -427,6 +428,18 @@ function setValue(id, val, decimals = 1) {
   else el.value = "";
 }
 
+function setUserValue(id, val, decimals = 1) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  if (typeof val === "number" && !isNaN(val) && Math.abs(val) < 1e-9) {
+    el.value = "";
+    return;
+  }
+  if (typeof val === "number" && !isNaN(val)) el.value = val.toFixed(decimals);
+  else el.value = "";
+}
+
 function setText(id, val, decimals = 1) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -434,7 +447,7 @@ function setText(id, val, decimals = 1) {
   else el.textContent = "–";
 }
 
-/* ✅ poprawka: kasuj 0/0.0 po tapnięciu (focus), ale nie kasuj wartości != 0 */
+/* (może zostać – nie szkodzi, a przy clamp do 0 też wyczyści) */
 function clearZeroOnFocus(el) {
   if (!el || el.readOnly) return;
 
@@ -503,12 +516,6 @@ function restoreFields() {
   if (saltPctEl && (saltPctEl.value === "" || saltPctEl.value === null)) {
     saltPctEl.value = "2";
   }
-
-  // ✅ jeśli nie było zapisu w localStorage, utrzymaj startowe 0 dla glutenu
-  const glutenEl = document.getElementById("glutenProd");
-  if (glutenEl && (glutenEl.value === "" || glutenEl.value === null)) {
-    glutenEl.value = "0";
-  }
 }
 
 function setupAutosave() {
@@ -554,7 +561,6 @@ function updateMissingFlourWarning(totalFlourBlend) {
 
   if (targetFlour > 0 && totalFlourBlend < targetFlour - 0.5) {
     const missing = targetFlour - totalFlourBlend;
-    // ✅ poprawka: forma komunikatu
     el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby łączna wartość wyniosła ${T.toFixed(0)} g.`;
     el.style.display = "block";
   } else {
@@ -590,30 +596,70 @@ let percentSync = false;
 function gramsFromPct(k) {
   const target = flourTargetMass();
   if (target <= 0) return;
-  const pct = num(pctId(k));
+
+  const pctEl = document.getElementById(pctId(k));
+  const mEl = document.getElementById(mId(k));
+  if (!pctEl || !mEl) return;
+
+  const raw = (pctEl.value || "").trim();
+  if (raw === "") {
+    percentSync = true;
+    mEl.value = "";
+    percentSync = false;
+    return;
+  }
+
+  const pct = parseFloat(raw.replace(",", "."));
+  if (isNaN(pct)) return;
+
   const grams = target * (pct / 100);
   percentSync = true;
-  setValue(mId(k), grams, 1);
+  setUserValue(mId(k), grams, 1);
   percentSync = false;
 }
 
 function pctFromGrams(k) {
   const target = flourTargetMass();
   if (target <= 0) return;
-  const grams = num(mId(k));
+
+  const mEl = document.getElementById(mId(k));
+  const pctEl = document.getElementById(pctId(k));
+  if (!mEl || !pctEl) return;
+
+  const raw = (mEl.value || "").trim();
+  if (raw === "") {
+    percentSync = true;
+    pctEl.value = "";
+    percentSync = false;
+    return;
+  }
+
+  const grams = parseFloat(raw.replace(",", "."));
+  if (isNaN(grams)) return;
+
   const pct = (grams / target) * 100;
   percentSync = true;
-  setValue(pctId(k), pct, 1);
+  setUserValue(pctId(k), pct, 1);
   percentSync = false;
 }
 
-/* Zerowanie pozostałych */
+/* Zerowanie pozostałych (ma czyścić także białko) */
 function zeroOthers(lockedKey) {
   for (const k of activeKeys()) {
     if (k === lockedKey) continue;
+
     percentSync = true;
-    setValue(pctId(k), 0, 1);
-    setValue(mId(k), 0, 1);
+
+    const mEl = document.getElementById(mId(k));
+    const pctEl = document.getElementById(pctId(k));
+    if (mEl) mEl.value = "";
+    if (pctEl) pctEl.value = "";
+
+    if (k !== "R") {
+      const pEl = document.getElementById("p" + k);
+      if (pEl) pEl.value = "";
+    }
+
     percentSync = false;
   }
 }
@@ -636,7 +682,7 @@ function normalizePercents(lockedKey) {
     if (k === lockedKey) continue;
     const v = num(pctId(k));
     const scaled = rest > 0 ? (v * target / rest) : 0;
-    setValue(pctId(k), scaled, 1);
+    setUserValue(pctId(k), scaled, 1);
   }
   percentSync = false;
 
@@ -664,7 +710,7 @@ function normalizeGrams(lockedKey) {
     if (k === lockedKey) continue;
     const v = num(mId(k));
     const scaled = rest > 0 ? (v * remaining / rest) : 0;
-    setValue(mId(k), scaled, 1);
+    setUserValue(mId(k), scaled, 1);
   }
   percentSync = false;
 
@@ -674,7 +720,9 @@ function normalizeGrams(lockedKey) {
 
 /* OBLICZENIA */
 function recalc() {
-  // gluten witalny
+  const T = num("totalDry");
+
+  // gluten witalny (wyjściowa kolumna gG ma być 0,0)
   const Gprod = num("glutenProd");
   const gG = Gprod * 0.8;
   setValue("gG", gG);
@@ -682,7 +730,7 @@ function recalc() {
   let totalFlourBlend = 0; // mąki (w tym żytnia), bez glutenu witalnego
   let sumFlourGluten = 0;  // gluten strukturalny z mąk (żytnia = 0)
 
-  // mąki 1..5
+  // mąki 1..5 (kolumna gX ma być 0,0 nawet gdy puste)
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const row = document.getElementById("flourRow" + i);
     if (row && row.style.display === "none") {
@@ -710,11 +758,26 @@ function recalc() {
   // łączna masa "mąki" = mąki + gluten witalny
   const sumDry = totalFlourBlend + Gprod;
   const sumGluten = sumFlourGluten + gG;
-  const glutenPct = sumDry > 0 ? (sumGluten / sumDry * 100) : NaN;
 
-  setText("sumDryDisplay", sumDry, 1);
-  setText("sumGlutenDisplay", sumGluten, 1);
-  setText("glutenPercentDisplay", glutenPct, 2);
+  // Jeśli nic nie wpisane i brak masy bazowej -> pokazuj kreski
+  const hasAnyForSection2 = (T > 0) || (sumDry > 0) || (sumGluten > 0);
+
+  if (!hasAnyForSection2) {
+    setText("sumDryDisplay", NaN);
+    setText("sumGlutenDisplay", NaN);
+    setText("glutenPercentDisplay", NaN);
+  } else {
+    setText("sumDryDisplay", sumDry, 1);
+    setText("sumGlutenDisplay", sumGluten, 1);
+
+    // ✅ % ma być 0,0 gdy wpisana masa bazowa, nawet jeśli sumDry = 0
+    let glutenPct;
+    if (sumDry > 0) glutenPct = (sumGluten / sumDry) * 100;
+    else glutenPct = (T > 0 ? 0 : NaN);
+
+    if (T > 0 && (!isFinite(glutenPct) || isNaN(glutenPct))) glutenPct = 0;
+    setText("glutenPercentDisplay", glutenPct, 2);
+  }
 
   // zaczyn
   const L = num("levain"), Lh = num("levainHydro");
@@ -725,19 +788,19 @@ function recalc() {
     levWater = L - levFlour;
   }
 
-  setText("levainFlourDisplay", levFlour, 1);
-  setText("levainWaterDisplay", levWater, 1);
+  setText("levainFlourDisplay", (L > 0 && Lh > 0) ? levFlour : NaN, 1);
+  setText("levainWaterDisplay", (L > 0 && Lh > 0) ? levWater : NaN, 1);
 
   // hydracja
   const totalFlour = sumDry + levFlour;
-  setText("totalFlourDisplay", totalFlour, 1);
+  setText("totalFlourDisplay", (hasAnyForSection2 || L > 0) ? totalFlour : NaN, 1);
 
   hydroSync = true;
 
   if (totalFlour > 0) {
     if (lastHydroEdit === "target") {
       const targetH = num("targetHydro");
-      const totalWater = (!isNaN(targetH) && targetH > 0)
+      const totalWater = (targetH > 0)
         ? totalFlour * targetH / 100
         : NaN;
 
@@ -764,7 +827,6 @@ function recalc() {
   hydroSync = false;
 
   // sól: % z totalDry
-  const T = num("totalDry");
   const saltPct = num("saltPct");
   const salt = (T > 0 && saltPct > 0) ? (T * saltPct / 100) : NaN;
   setValue("salt", salt, 1);
@@ -796,13 +858,9 @@ function clearFields() {
   const saltPctEl = document.getElementById("saltPct");
   if (saltPctEl) saltPctEl.value = "2";
 
-  // ✅ po resecie gluten wraca na 0 (żeby było 0,0)
-  const glutenEl = document.getElementById("glutenProd");
-  if (glutenEl) glutenEl.value = "0";
-
+  // wyjściowe kolumny glutenu z mąk – wyczyść/ustaw przez recalc
   for (let i = 1; i <= MAX_FLOURS; i++) setValue("g" + i, "");
   setValue("gG", "");
-  setValue("salt", "");
 
   [
     "sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
@@ -891,30 +949,28 @@ function generateRecipe() {
 
 /* Obsługa inputów % i g */
 function bindFlourInputs() {
-  // 1..5
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const key = String(i);
     const mEl = document.getElementById("m" + i);
     const pctEl = document.getElementById("pct" + i);
 
     if (mEl) {
-      mEl.addEventListener("input", () => {
+      mEl.addEventListener("input", (e) => {
         if (percentSync) return;
 
-        // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony" (np. "1000,")
+        // ✅ iOS backspace: nie clampuj / nie normalizuj podczas kasowania
+        if (e && e.inputType === "deleteContentBackward") { recalc(); return; }
+
         const raw = (mEl.value || "").trim();
-        if (/[.,]$/.test(raw)) {
-          recalc();
-          return;
-        }
+        if (/[.,]$/.test(raw)) { recalc(); return; }
 
         const target = flourTargetMass();
         const val = num(mId(key));
 
         if (target > 0 && val >= target - 1e-9) {
           percentSync = true;
-          setValue(mId(key), target, 1);
-          setValue(pctId(key), 100, 1);
+          setUserValue(mId(key), target, 1);
+          setUserValue(pctId(key), 100, 1);
           percentSync = false;
           zeroOthers(key);
           recalc();
@@ -930,21 +986,19 @@ function bindFlourInputs() {
     }
 
     if (pctEl) {
-      pctEl.addEventListener("input", () => {
+      pctEl.addEventListener("input", (e) => {
         if (percentSync) return;
 
-        // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony" (np. "100,")
+        if (e && e.inputType === "deleteContentBackward") { recalc(); return; }
+
         const raw = (pctEl.value || "").trim();
-        if (/[.,]$/.test(raw)) {
-          recalc();
-          return;
-        }
+        if (/[.,]$/.test(raw)) { recalc(); return; }
 
         const val = num(pctId(key));
 
         if (val >= 100 - 1e-9) {
           percentSync = true;
-          setValue(pctId(key), 100, 1);
+          setUserValue(pctId(key), 100, 1);
           percentSync = false;
           zeroOthers(key);
           gramsFromPct(key);
@@ -966,23 +1020,21 @@ function bindFlourInputs() {
   const pctR = document.getElementById("pctR");
 
   if (mR) {
-    mR.addEventListener("input", () => {
+    mR.addEventListener("input", (e) => {
       if (percentSync) return;
 
-      // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony"
+      if (e && e.inputType === "deleteContentBackward") { recalc(); return; }
+
       const raw = (mR.value || "").trim();
-      if (/[.,]$/.test(raw)) {
-        recalc();
-        return;
-      }
+      if (/[.,]$/.test(raw)) { recalc(); return; }
 
       const target = flourTargetMass();
       const val = num("mR");
 
       if (target > 0 && val >= target - 1e-9) {
         percentSync = true;
-        setValue("mR", target, 1);
-        setValue("pctR", 100, 1);
+        setUserValue("mR", target, 1);
+        setUserValue("pctR", 100, 1);
         percentSync = false;
         zeroOthers("R");
         recalc();
@@ -998,21 +1050,19 @@ function bindFlourInputs() {
   }
 
   if (pctR) {
-    pctR.addEventListener("input", () => {
+    pctR.addEventListener("input", (e) => {
       if (percentSync) return;
 
-      // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony"
+      if (e && e.inputType === "deleteContentBackward") { recalc(); return; }
+
       const raw = (pctR.value || "").trim();
-      if (/[.,]$/.test(raw)) {
-        recalc();
-        return;
-      }
+      if (/[.,]$/.test(raw)) { recalc(); return; }
 
       const val = num("pctR");
 
       if (val >= 100 - 1e-9) {
         percentSync = true;
-        setValue("pctR", 100, 1);
+        setUserValue("pctR", 100, 1);
         percentSync = false;
         zeroOthers("R");
         gramsFromPct("R");
@@ -1047,7 +1097,6 @@ updateFlourVisibility();
 setupAutosave();
 bindFlourInputs();
 
-/* ✅ poprawka: podpinamy kasowanie 0 po tapnięciu */
 [
   "m1","m2","m3","m4","m5",
   "pct1","pct2","pct3","pct4","pct5",
