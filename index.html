@@ -209,7 +209,7 @@
   display: flex;
   align-items: center;
   overflow: hidden;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 /* I tu naprawdę działa zmniejszenie fontu na iOS */
@@ -299,7 +299,7 @@
 
   <!-- Gluten (zawsze na dole) -->
   <div class="flour-row" id="glutenRow">
-    <div class="fake-input gluten-name">Gluten witalny</div>
+    <div class="fake-input gluten-name">Gluten<br>witalny</div>
     <input type="number" id="glutenProd" step="0.5" min="0" />
     <input type="text" id="pctG" value="—" readonly />
     <input type="number" id="pG" value="80" readonly />
