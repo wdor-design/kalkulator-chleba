@@ -191,6 +191,32 @@
     @media (max-width: 700px) {
       body { margin: 0.5rem; }
     }
+    /* Ujednolicamy wysokość pól w tabeli, żeby "fake input" był identyczny */
+.flour-row input[type="text"],
+.flour-row input[type="number"]{
+  height: 2.1rem;
+}
+
+/* Div wyglądający jak input */
+.fake-input{
+  height: 2.1rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* I tu naprawdę działa zmniejszenie fontu na iOS */
+.gluten-name{
+  font-size: 0.62rem;   /* możesz zejść do 0.6 jeśli chcesz jeszcze mniejsze */
+  line-height: 1;
+}
   </style>
 </head>
 
@@ -273,7 +299,7 @@
 
   <!-- Gluten (zawsze na dole) -->
   <div class="flour-row" id="glutenRow">
-    <input type="text" class="gluten-name" value="Gluten witalny" readonly />
+    <div class="fake-input gluten-name">Gluten witalny</div>
     <input type="number" id="glutenProd" step="0.5" min="0" />
     <input type="text" id="pctG" value="—" readonly />
     <input type="number" id="pG" value="80" readonly />
