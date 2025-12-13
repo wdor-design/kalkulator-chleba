@@ -311,7 +311,8 @@
     <!-- Gluten (zawsze na dole) -->
     <div class="flour-row" id="glutenRow">
       <div class="fake-input gluten-name">Gluten<br>witalny</div>
-      <input type="number" id="glutenProd" step="0.5" min="0" />
+      <!-- ✅ poprawka: startowo 0,0 (przez value=0) -->
+      <input type="number" id="glutenProd" step="0.5" min="0" value="0" />
       <input type="text" id="pctG" value="—" readonly />
       <input type="number" id="pG" value="80" readonly />
       <input type="number" id="gG" readonly />
@@ -433,6 +434,21 @@ function setText(id, val, decimals = 1) {
   else el.textContent = "–";
 }
 
+/* ✅ poprawka: kasuj 0/0.0 po tapnięciu (focus), ale nie kasuj wartości != 0 */
+function clearZeroOnFocus(el) {
+  if (!el || el.readOnly) return;
+
+  el.addEventListener("focus", () => {
+    const raw = (el.value || "").trim();
+    if (raw === "") return;
+
+    const v = parseFloat(raw.replace(",", "."));
+    if (!isNaN(v) && Math.abs(v) < 1e-12) {
+      el.value = "";
+    }
+  });
+}
+
 /* DWUKIERUNKOWA HYDRACJA */
 let lastHydroEdit = "target";
 let hydroSync = false;
@@ -487,6 +503,12 @@ function restoreFields() {
   if (saltPctEl && (saltPctEl.value === "" || saltPctEl.value === null)) {
     saltPctEl.value = "2";
   }
+
+  // ✅ jeśli nie było zapisu w localStorage, utrzymaj startowe 0 dla glutenu
+  const glutenEl = document.getElementById("glutenProd");
+  if (glutenEl && (glutenEl.value === "" || glutenEl.value === null)) {
+    glutenEl.value = "0";
+  }
 }
 
 function setupAutosave() {
@@ -532,7 +554,8 @@ function updateMissingFlourWarning(totalFlourBlend) {
 
   if (targetFlour > 0 && totalFlourBlend < targetFlour - 0.5) {
     const missing = targetFlour - totalFlourBlend;
-    el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby łączna masa (mąki + gluten) wyniosła ${T.toFixed(0)} g.`;
+    // ✅ poprawka: forma komunikatu
+    el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby łączna wartość wyniosła ${T.toFixed(0)} g.`;
     el.style.display = "block";
   } else {
     el.style.display = "none";
@@ -645,7 +668,6 @@ function normalizeGrams(lockedKey) {
   }
   percentSync = false;
 
-  // ✅ Twój komunikat (z masą bazową T)
   const T = num("totalDry");
   showScaleMessage(`Przeskalowano mąki do masy bazowej ${T.toFixed(0)} g`);
 }
@@ -682,7 +704,7 @@ function recalc() {
   const mR = num("mR");
   totalFlourBlend += mR;
 
-  // komunikat o brakującej mące (żeby suma mąk + gluten = T)
+  // komunikat o brakującej mące
   updateMissingFlourWarning(totalFlourBlend);
 
   // łączna masa "mąki" = mąki + gluten witalny
@@ -773,6 +795,10 @@ function clearFields() {
 
   const saltPctEl = document.getElementById("saltPct");
   if (saltPctEl) saltPctEl.value = "2";
+
+  // ✅ po resecie gluten wraca na 0 (żeby było 0,0)
+  const glutenEl = document.getElementById("glutenProd");
+  if (glutenEl) glutenEl.value = "0";
 
   for (let i = 1; i <= MAX_FLOURS; i++) setValue("g" + i, "");
   setValue("gG", "");
@@ -875,10 +901,16 @@ function bindFlourInputs() {
       mEl.addEventListener("input", () => {
         if (percentSync) return;
 
+        // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony" (np. "1000,")
+        const raw = (mEl.value || "").trim();
+        if (/[.,]$/.test(raw)) {
+          recalc();
+          return;
+        }
+
         const target = flourTargetMass();
         const val = num(mId(key));
 
-        // jeśli użytkownik wpisze całą masę docelową mąk (T-G) -> 100% i wyzeruj resztę
         if (target > 0 && val >= target - 1e-9) {
           percentSync = true;
           setValue(mId(key), target, 1);
@@ -901,9 +933,15 @@ function bindFlourInputs() {
       pctEl.addEventListener("input", () => {
         if (percentSync) return;
 
+        // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony" (np. "100,")
+        const raw = (pctEl.value || "").trim();
+        if (/[.,]$/.test(raw)) {
+          recalc();
+          return;
+        }
+
         const val = num(pctId(key));
 
-        // jeśli użytkownik wpisze 100% -> wyzeruj resztę
         if (val >= 100 - 1e-9) {
           percentSync = true;
           setValue(pctId(key), 100, 1);
@@ -931,6 +969,13 @@ function bindFlourInputs() {
     mR.addEventListener("input", () => {
       if (percentSync) return;
 
+      // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony"
+      const raw = (mR.value || "").trim();
+      if (/[.,]$/.test(raw)) {
+        recalc();
+        return;
+      }
+
       const target = flourTargetMass();
       const val = num("mR");
 
@@ -955,6 +1000,13 @@ function bindFlourInputs() {
   if (pctR) {
     pctR.addEventListener("input", () => {
       if (percentSync) return;
+
+      // ✅ poprawka: nie clampuj, jeśli wpis jest "niedokończony"
+      const raw = (pctR.value || "").trim();
+      if (/[.,]$/.test(raw)) {
+        recalc();
+        return;
+      }
 
       const val = num("pctR");
 
@@ -994,6 +1046,16 @@ loadFlourCount();
 updateFlourVisibility();
 setupAutosave();
 bindFlourInputs();
+
+/* ✅ poprawka: podpinamy kasowanie 0 po tapnięciu */
+[
+  "m1","m2","m3","m4","m5",
+  "pct1","pct2","pct3","pct4","pct5",
+  "p1","p2","p3","p4","p5",
+  "mR","pctR",
+  "glutenProd"
+].forEach(id => clearZeroOnFocus(document.getElementById(id)));
+
 recalc();
 
 /* Dodaj mąkę */
