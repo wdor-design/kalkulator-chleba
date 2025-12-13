@@ -694,7 +694,7 @@ function syncRowOnBaseChange(k) {
   }
 }
 
-/* Zerowanie pozostałych (czyści tylko gramy/% + białko jak wcześniej przy 100%) */
+/* Zerowanie pozostałych (100% -> czyści gramy/% + białko) */
 function zeroOthers(lockedKey) {
   for (const k of activeKeys()) {
     if (k === lockedKey) continue;
@@ -1008,7 +1008,7 @@ function generateRecipe() {
 /* ===== Obsługa inputów % i g ===== */
 function bindFlourInputs() {
 
-  // Nazwy: decyzja dopiero na BLUR (żeby móc edytować bez kasowania)
+  // ✅ ZMIANA: Nazwy -> pusta nazwa na BLUR zawsze resetuje cały wiersz
   for (let i = 1; i <= MAX_FLOURS; i++) {
     const nameEl = document.getElementById("flourName" + i);
     if (!nameEl) continue;
@@ -1016,15 +1016,10 @@ function bindFlourInputs() {
     nameEl.addEventListener("blur", () => {
       const name = (nameEl.value || "").trim();
 
+      // 🔥 JEDYNA ZASADA: pusta nazwa + blur => reset wiersza
       if (name === "") {
-        if (rowHasAnyValues(i)) {
-          // user edytował nazwę -> nie kasuj danych
-          ensureDefaultName(i);
-        } else {
-          // pusta nazwa + puste pola -> usuń pozycję
-          clearFlourRow(i);
-          return;
-        }
+        clearFlourRow(i);
+        return;
       }
 
       localStorage.setItem("chleb_flourName" + i, nameEl.value);
@@ -1041,7 +1036,7 @@ function bindFlourInputs() {
 
     if (pEl) {
       pEl.addEventListener("input", () => {
-        // wpisanie białka też tworzy pozycję -> auto-nazwa
+        // (zostawiamy auto-nazwę jeśli typ pusty i ktoś zaczyna od białka)
         ensureDefaultName(i);
         recalc();
       });
