@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chleb na zakwasie — Kalkulator zawartości glutenu i hydracji ciasta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- iOS PWA support -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" href="bread-icon.png" />
+
+  <style>
+    :root{ --v-gap: 0.75rem; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 1rem;
+      line-height: 1.4;
+      background: #fff;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .title-icon { width: 30px; height: 30px; object-fit: contain; }
+    h1 { font-size: 1.35rem; margin: 0; }
+    h2 { font-size: 1.1rem; }
+
+    .section {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .section h2 { margin: 0.2rem 0; }
+
+    label, .field-label {
+      font-size: 0.82rem;
+      color: #222;
+      line-height: 1.25;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.86rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 400;
+    }
+
+    input:not([readonly]),
+    textarea:not([readonly]) {
+      background-color: #e6f4ff;
+      transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+
+    input:not([readonly]):focus,
+    textarea:not([readonly]):focus {
+      background-color: #d8eeff;
+      box-shadow: 0 0 0 2px #99cfff;
+      border-color: #66aef5;
+      outline: none;
+    }
+
+    input[readonly] {
+      background-color: #f5f5f5;
+      border-color: #ddd;
+      cursor: default;
+      font-weight: 400;
+    }
+
+    .out {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.86rem;
+      font-weight: 400;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 2.1rem;
+      box-sizing: border-box;
+      display: block;
+      width: 100%;
+      cursor: default;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.6fr 170px;
+      column-gap: 1rem;
+      row-gap: var(--v-gap);
+      max-width: 650px;
+      align-items: start;
+    }
+
+    .grid label,
+    .grid .field-label {
+      align-self: center;
+    }
+
+    .grid input[type="number"],
+    .grid input[type="text"],
+    .grid .out {
+      width: 100%;
+      justify-self: start;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    .btn {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.82rem;
+      border-radius: 999px;
+      border: 1px solid #777;
+      background: #f3f3f3;
+      cursor: pointer;
+      text-align: center;
+      white-space: normal;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+    }
+
+    .btn:hover { background: #e8e8e8; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-row {
+      display: flex;
+      gap: var(--v-gap);
+      align-items: center;
+      margin-bottom: var(--v-gap);
+    }
+    .btn-row .btn { flex: 1 1 0; width: auto; }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 0;
+    }
+
+    /* ===== TABELA MĄK ===== */
+    .flour-table { display: block; }
+
+    .flour-row {
+      display: grid;
+      grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr 0.9fr;
+      gap: 0.3rem;
+      margin-bottom: 0.3rem;
+      max-width: 900px;
+      align-items: center;
+    }
+
+    .flour-header {
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .flour-row input[type="text"],
+    .flour-row input[type="number"]{
+      height: 2.1rem;
+    }
+
+    .fake-input{
+      height: 2.1rem;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.35rem 0.45rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: normal;
+      text-align: center;
+    }
+
+    .gluten-name{
+      font-size: 0.65rem;
+      line-height: 1.05;
+      text-align: center;
+    }
+
+    #percentWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top: 0.25rem;
+      max-width: 900px;
+    }
+
+    #missingFlourWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top:0.2rem;
+    }
+
+    #levainWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top:0.2rem;
+      max-width: 650px;
+    }
+
+    #recipeSummary {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    @media (max-width: 700px) {
+      body { margin: 0.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="title-row">
+  <img src="bread-icon.png" alt="" class="title-icon" />
+  <h1>Chleb na zakwasie</h1>
+</div>
+
+<div style="font-size: 0.95rem; color:#444; margin-bottom:1rem;">
+  <strong>Kalkulator zawartości glutenu i hydracji ciasta</strong>
+</div>
+
+<!-- 1 -->
+<div class="section">
+  <h2>1. Masa bazowa mąki</h2>
+  <div class="grid">
+    <label for="totalDry">Ilość mąki, na której opiera się przepis [g]</label>
+    <input type="number" id="totalDry" step="1" min="0" />
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="section">
+  <h2>2. Kompozycja mąk</h2>
+
+  <p class="hint">
+    Możesz wpisywać ilości [g] albo udziały [%]. Kalkulator automatycznie dopasuje pozostałe wartości do limitów (100% / masa bazowa).
+    Gluten witalny wlicza się do masy całkowitej, ale nie wlicza się do procentów mąk.
+  </p>
+
+  <div class="flour-table">
+
+    <div class="flour-row flour-header">
+      <div class="field-label">Typ</div>
+      <div class="field-label">Ilość [g]</div>
+      <div class="field-label">Udział [%]</div>
+      <div class="field-label">Białko [g/100 g]</div>
+      <div class="field-label">Gluten z mąki [g]</div>
+    </div>
+
+    <div class="flour-row" id="flourRow1">
+      <input type="text" id="flourName1" placeholder="np. T110" />
+      <input type="number" id="m1" step="1" min="0" />
+      <input type="number" id="pct1" step="0.1" min="0" max="100" />
+      <input type="number" id="p1" step="0.1" min="0" />
+      <input type="text" id="g1" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow2">
+      <input type="text" id="flourName2" placeholder="np. T80 ancient" />
+      <input type="number" id="m2" step="1" min="0" />
+      <input type="number" id="pct2" step="0.1" min="0" max="100" />
+      <input type="number" id="p2" step="0.1" min="0" />
+      <input type="text" id="g2" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow3">
+      <input type="text" id="flourName3" placeholder="np. T65" />
+      <input type="number" id="m3" step="1" min="0" />
+      <input type="number" id="pct3" step="0.1" min="0" max="100" />
+      <input type="number" id="p3" step="0.1" min="0" />
+      <input type="text" id="g3" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow4" style="display:none;">
+      <input type="text" id="flourName4" placeholder="np. T150" />
+      <input type="number" id="m4" step="1" min="0" />
+      <input type="number" id="pct4" step="0.1" min="0" max="100" />
+      <input type="number" id="p4" step="0.1" min="0" />
+      <input type="text" id="g4" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow5" style="display:none;">
+      <input type="text" id="flourName5" placeholder="np. Manitoba" />
+      <input type="number" id="m5" step="1" min="0" />
+      <input type="number" id="pct5" step="0.1" min="0" max="100" />
+      <input type="number" id="p5" step="0.1" min="0" />
+      <input type="text" id="g5" readonly />
+    </div>
+
+    <!-- Żytnia -->
+    <div class="flour-row" id="ryeRow">
+      <div class="fake-input gluten-name">Mąka<br>żytnia</div>
+      <input type="number" id="mR" step="1" min="0" />
+      <input type="number" id="pctR" step="0.1" min="0" max="100" />
+      <input type="text" id="pR" value="—" readonly />
+      <input type="text" id="gR" value="—" readonly />
+    </div>
+
+    <!-- Gluten -->
+    <div class="flour-row" id="glutenRow">
+      <div class="fake-input gluten-name">Gluten<br>witalny</div>
+      <input type="number" id="glutenProd" step="0.5" min="0" />
+      <input type="text" id="pctG" value="—" readonly />
+      <input type="number" id="pG" value="80" readonly />
+      <input type="text" id="gG" readonly />
+    </div>
+
+  </div>
+
+  <div id="percentWarning"></div>
+
+  <div class="grid" style="margin-top: var(--v-gap);">
+    <span></span>
+    <button class="btn" id="addFlourBtn" type="button">Dodaj kolejną mąkę (max 5)</button>
+  </div>
+
+  <div class="grid" style="margin-top: var(--v-gap);">
+    <span class="field-label">Łączna masa mąki [g]</span>
+    <div>
+      <input class="out" type="text" id="sumDryDisplay" value="—" readonly />
+      <div id="missingFlourWarning"></div>
+    </div>
+
+    <span class="field-label">Zawartość glutenu w mieszance [g]</span>
+    <input class="out" type="text" id="sumGlutenDisplay" value="—" readonly />
+
+    <span class="field-label">Zawartość glutenu w mieszance [%]</span>
+    <input class="out" type="text" id="glutenPercentDisplay" value="—" readonly />
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="section">
+  <h2>3. Zaczyn (levain)</h2>
+
+  <p class="hint">
+    Możesz policzyć levain o dowolnej hydracji (np. 70%). Starter zakładamy jako 100% hydracji (połowa mąka, połowa woda).
+    Pola „mąka do dodania” i „woda do dodania” są edytowalne — możesz też startować od nich.
+  </p>
+
+  <div class="grid">
+    <label for="levain">Potrzebna ilość zaczynu [g]</label>
+    <input type="number" id="levain" step="1" min="0" />
+
+    <label for="levainHydro">Hydracja levainu [%]</label>
+    <input type="number" id="levainHydro" step="1" min="0" />
+
+    <label for="levainStarter">Starter (100% hydr.) [g]</label>
+    <input type="number" id="levainStarter" step="1" min="0" />
+
+    <span class="field-label">Mąka w levainie (łącznie) [g]</span>
+    <input class="out" type="text" id="levainFlourDisplay" value="—" readonly />
+
+    <span class="field-label">Woda w levainie (łącznie) [g]</span>
+    <input class="out" type="text" id="levainWaterDisplay" value="—" readonly />
+
+    <label for="levainFlourAdd">Mąka do dodania [g]</label>
+    <input type="number" id="levainFlourAdd" step="1" min="0" />
+
+    <label for="levainWaterAdd">Woda do dodania [g]</label>
+    <input type="number" id="levainWaterAdd" step="1" min="0" />
+  </div>
+
+  <div id="levainWarning">Ilość startera przekracza założoną masę levain. Zmniejsz jego ilość!</div>
+</div>
+
+<!-- 4 -->
+<div class="section">
+  <h2>4. Hydracja ciasta</h2>
+
+  <div class="grid">
+    <label for="targetHydro">Docelowa hydracja ciasta [%]</label>
+    <input type="number" id="targetHydro" step="0.5" min="0" />
+
+    <label for="addedWater">Woda do dodania [g]</label>
+    <input type="number" id="addedWater" step="1" min="0" />
+
+    <span class="field-label">Łączna masa mąki (mieszanka + zaczyn) [g]</span>
+    <input class="out" type="text" id="totalFlourDisplay" value="—" readonly />
+
+    <span class="field-label">Łączna ilość wody (łącznie z zaczynem) [g]</span>
+    <input class="out" type="text" id="totalWaterDisplay" value="—" readonly />
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="section">
+  <h2>5. Sól</h2>
+
+  <div class="grid">
+    <label for="saltPct">Procent soli (względem masy mieszanki mąk) [%]</label>
+    <input type="number" id="saltPct" step="0.1" min="0" />
+
+    <label for="salt">Dodatek soli [g]</label>
+    <input type="text" id="salt" readonly value="—" />
+  </div>
+</div>
+
+<!-- 6 -->
+<div class="section">
+  <h2>6. Podsumowanie przepisu</h2>
+
+  <div class="btn-row">
+    <button class="btn" type="button" onclick="generateRecipe()">ZAPISZ PRZEPIS</button>
+    <button class="btn" type="button" onclick="clearFields()">WYCZYŚĆ POLA</button>
+  </div>
+
+  <textarea id="recipeSummary" readonly placeholder="Tutaj pojawi się podsumowanie przepisu..."></textarea>
+</div>
+
+<script>
+/* ===== HELPERY ===== */
+const DASH = "—";
+
+function num(id) {
+  const el = document.getElementById(id);
+  const v = parseFloat((el?.value || "").replace(",", "."));
+  return isNaN(v) ? 0 : v;
+}
+
+function setValue(id, val, decimals = 1) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (typeof val === "number" && isFinite(val)) el.value = val.toFixed(decimals);
+  else el.value = "";
+}
+
+function setUserValue(id, val, decimals = 1) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  if (typeof val === "number" && isFinite(val) && Math.abs(val) < 1e-9) {
+    el.value = "";
+    return;
+  }
+  if (typeof val === "number" && isFinite(val)) el.value = val.toFixed(decimals);
+  else el.value = "";
+}
+
+function setOut(id, val, decimals = 1) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  if (typeof val === "number" && isFinite(val)) el.value = val.toFixed(decimals);
+  else el.value = DASH;
+}
+
+/* Auto-nazwa tylko gdy zaczynamy wpisywać liczby, a typ pusty */
+function ensureDefaultName(i) {
+  const nameEl = document.getElementById("flourName" + i);
+  if (!nameEl) return;
+  if ((nameEl.value || "").trim() === "") {
+    nameEl.value = `Mąka ${i}`;
+    localStorage.setItem("chleb_flourName" + i, nameEl.value);
+  }
+}
+
+/* Czyści cały wiersz mąki (1..5) */
+function clearFlourRow(i) {
+  const mEl = document.getElementById("m" + i);
+  const pctEl = document.getElementById("pct" + i);
+  const pEl = document.getElementById("p" + i);
+  const gEl = document.getElementById("g" + i);
+  const nameEl = document.getElementById("flourName" + i);
+
+  percentSync = true;
+  if (mEl) mEl.value = "";
+  if (pctEl) pctEl.value = "";
+  if (pEl) pEl.value = "";
+  percentSync = false;
+
+  if (gEl) gEl.value = DASH;
+  if (nameEl) {
+    nameEl.value = "";
+    localStorage.setItem("chleb_flourName" + i, "");
+  }
+
+  recalc();
+}
+
+/* DWUKIERUNKOWA HYDRACJA CIASTA */
+let lastHydroEdit = "target";
+let hydroSync = false;
+
+/* LEVAIN: dwukierunkowo */
+let levainSync = false;
+let lastLevainEdit = "total"; // total | hydro | starter | flourAdd | waterAdd
+
+/* DYNAMICZNE MĄKI */
+const MAX_FLOURS = 5;
+let flourCount = 3;
+
+function loadFlourCount() {
+  const saved = parseInt(localStorage.getItem("chleb_flourCount") || "3", 10);
+  flourCount = Number.isFinite(saved) ? Math.min(MAX_FLOURS, Math.max(3, saved)) : 3;
+}
+
+function saveFlourCount() {
+  localStorage.setItem("chleb_flourCount", String(flourCount));
+}
+
+function updateFlourVisibility() {
+  for (let i = 4; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (!row) continue;
+    row.style.display = (i <= flourCount) ? "" : "none";
+  }
+  const btn = document.getElementById("addFlourBtn");
+  if (btn) btn.disabled = flourCount >= MAX_FLOURS;
+}
+
+/* AUTOSAVE */
+const fieldsToSave = [
+  "totalDry",
+  "saltPct",
+  "flourName1","flourName2","flourName3","flourName4","flourName5",
+  "m1","m2","m3","m4","m5",
+  "pct1","pct2","pct3","pct4","pct5",
+  "p1","p2","p3","p4","p5",
+  "mR","pctR",
+  "glutenProd",
+  "levain","levainHydro","levainStarter","levainFlourAdd","levainWaterAdd",
+  "targetHydro",
+  "addedWater"
+];
+
+function restoreFields() {
+  fieldsToSave.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const saved = localStorage.getItem("chleb_" + id);
+    if (saved !== null) el.value = saved;
+  });
+
+  const saltPctEl = document.getElementById("saltPct");
+  if (saltPctEl && (saltPctEl.value === "" || saltPctEl.value === null)) {
+    saltPctEl.value = "2";
+  }
+
+  const st = document.getElementById("levainStarter");
+  if (st && (st.value === "" || st.value === null)) st.value = "40";
+}
+
+function setupAutosave() {
+  fieldsToSave.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener("input", () => {
+      if (!hydroSync) {
+        if (id === "targetHydro") lastHydroEdit = "target";
+        if (id === "addedWater") lastHydroEdit = "water";
+      }
+      if (!levainSync) {
+        if (id === "levain") lastLevainEdit = "total";
+        if (id === "levainHydro") lastLevainEdit = "hydro";
+        if (id === "levainStarter") lastLevainEdit = "starter";
+        if (id === "levainFlourAdd") lastLevainEdit = "flourAdd";
+        if (id === "levainWaterAdd") lastLevainEdit = "waterAdd";
+      }
+
+      localStorage.setItem("chleb_" + id, el.value);
+      recalc();
+    });
+  });
+}
+
+function clearStoredFields() {
+  fieldsToSave.forEach(id => localStorage.removeItem("chleb_" + id));
+  localStorage.removeItem("chleb_flourCount");
+}
+
+/* Komunikaty */
+function showScaleMessage(text) {
+  const el = document.getElementById("percentWarning");
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = "block";
+  clearTimeout(showScaleMessage._t);
+  showScaleMessage._t = setTimeout(() => {
+    el.style.display = "none";
+  }, 2500);
+}
+
+/* Masa docelowa mąk BEZ glutenu (cap) */
+function flourTargetMass() {
+  const T = num("totalDry");
+  const G = num("glutenProd");
+  if (T <= 0) return 0;
+  return Math.max(0, T - G);
+}
+
+/* Aktywne wiersze (mąki + żyto), gluten pomijamy */
+function activeKeys() {
+  const keys = [];
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display !== "none") keys.push(String(i));
+  }
+  keys.push("R");
+  return keys;
+}
+
+function pctId(k) { return (k === "R") ? "pctR" : ("pct" + k); }
+function mId(k)   { return (k === "R") ? "mR"   : ("m" + k);   }
+
+/* Przeliczenia %<->g */
+let percentSync = false;
+
+function gramsFromPct(k) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  const pctEl = document.getElementById(pctId(k));
+  const mEl = document.getElementById(mId(k));
+  if (!pctEl || !mEl) return;
+
+  const raw = (pctEl.value || "").trim();
+  if (raw === "") {
+    percentSync = true;
+    mEl.value = "";
+    percentSync = false;
+    return;
+  }
+
+  const pct = parseFloat(raw.replace(",", "."));
+  if (isNaN(pct)) return;
+
+  const grams = target * (pct / 100);
+  percentSync = true;
+  setUserValue(mId(k), grams, 1);
+  percentSync = false;
+}
+
+function pctFromGrams(k) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  const mEl = document.getElementById(mId(k));
+  const pctEl = document.getElementById(pctId(k));
+  if (!mEl || !pctEl) return;
+
+  const raw = (mEl.value || "").trim();
+  if (raw === "") {
+    percentSync = true;
+    pctEl.value = "";
+    percentSync = false;
+    return;
+  }
+
+  const grams = parseFloat(raw.replace(",", "."));
+  if (isNaN(grams)) return;
+
+  const pct = (grams / target) * 100;
+  percentSync = true;
+  setUserValue(pctId(k), pct, 1);
+  percentSync = false;
+}
+
+/* Twarde dopięcie limitu po zmianie bazy/glutenu: skaluj WSZYSTKIE mąki proporcjonalnie (gluten nie ruszany) */
+function normalizeAllFloursToTargetIfNeeded() {
+  const target = flourTargetMass();
+  if (target <= 0) return false;
+
+  const keys = activeKeys();
+  let total = 0;
+  for (const k of keys) total += num(mId(k));
+
+  if (total <= target + 1e-9) return false;
+
+  const factor = (total > 0) ? (target / total) : 0;
+
+  percentSync = true;
+  for (const kk of keys) {
+    const v = num(mId(kk));
+    setUserValue(mId(kk), v * factor, 1);
+  }
+  for (const kk of keys) pctFromGrams(kk);
+  percentSync = false;
+
+  const T = num("totalDry");
+  showScaleMessage(`Dodanie/zmiana glutenu przeskalowała mąki do masy bazowej ${T.toFixed(0)} g`);
+  return true;
+}
+
+/* Synchronizacja przy zmianie bazy: jeśli ktoś ma gramy -> odśwież %, jeśli ma % -> odśwież gramy */
+function syncRowOnBaseChange(k) {
+  const mEl = document.getElementById(mId(k));
+  const pctEl = document.getElementById(pctId(k));
+  if (!mEl || !pctEl) return;
+
+  const mRaw = (mEl.value || "").trim();
+  const pctRaw = (pctEl.value || "").trim();
+
+  if (mRaw !== "") { pctFromGrams(k); return; }
+  if (pctRaw !== "") { gramsFromPct(k); return; }
+}
+
+/* Zerowanie pozostałych */
+function zeroOthers(lockedKey) {
+  for (const k of activeKeys()) {
+    if (k === lockedKey) continue;
+
+    percentSync = true;
+
+    const mEl = document.getElementById(mId(k));
+    const pctEl = document.getElementById(pctId(k));
+    if (mEl) mEl.value = "";
+    if (pctEl) pctEl.value = "";
+
+    if (k !== "R") {
+      const pEl = document.getElementById("p" + k);
+      if (pEl) pEl.value = "";
+    }
+
+    percentSync = false;
+  }
+}
+
+/* Skalowanie procentów do 100% */
+function normalizePercents(lockedKey) {
+  const keys = activeKeys();
+  let total = 0;
+  for (const k of keys) total += num(pctId(k));
+
+  if (total <= 100 + 1e-9) return;
+
+  const lockedPct = num(pctId(lockedKey));
+  const rest = total - lockedPct;
+  const target = 100 - lockedPct;
+  if (target < 0) return;
+
+  percentSync = true;
+  for (const k of keys) {
+    if (k === lockedKey) continue;
+    const v = num(pctId(k));
+    const scaled = rest > 0 ? (v * target / rest) : 0;
+    setUserValue(pctId(k), scaled, 1);
+  }
+  percentSync = false;
+
+  showScaleMessage("Przeskalowano wartości do 100%");
+}
+
+/* Skalowanie gramów mąk do masy bazowej (z zachowaniem lockedKey) */
+function normalizeGrams(lockedKey) {
+  const target = flourTargetMass();
+  if (target <= 0) return;
+
+  const keys = activeKeys();
+  let total = 0;
+  for (const k of keys) total += num(mId(k));
+
+  if (total <= target + 1e-9) return;
+
+  const lockedG = num(mId(lockedKey));
+  const rest = total - lockedG;
+  const remaining = target - lockedG;
+  if (remaining < 0) return;
+
+  percentSync = true;
+  for (const k of keys) {
+    if (k === lockedKey) continue;
+    const v = num(mId(k));
+    const scaled = rest > 0 ? (v * remaining / rest) : 0;
+    setUserValue(mId(k), scaled, 1);
+  }
+  percentSync = false;
+
+  const T = num("totalDry");
+  showScaleMessage(`Przeskalowano mąki do masy bazowej ${T.toFixed(0)} g`);
+}
+
+/* ===== LEVAIN: obliczenia (starter 100%) ===== */
+function computeLevainTotalsFromTotalHydroStarter(L, H, S) {
+  const sF = Math.max(0, S) / 2;
+  const sW = Math.max(0, S) / 2;
+
+  if (L <= 0 || H <= 0) {
+    return { levFlour: 0, levWater: 0, flourAdd: 0, waterAdd: 0, flourAddRaw: 0, waterAddRaw: 0, hydro: H || 0, total: L || 0 };
+  }
+
+  const levFlour = L / (1 + H / 100);
+  const levWater = L - levFlour;
+
+  const flourAddRaw = levFlour - sF;
+  const waterAddRaw = levWater - sW;
+
+  return {
+    levFlour,
+    levWater,
+    flourAdd: Math.max(0, flourAddRaw),
+    waterAdd: Math.max(0, waterAddRaw),
+    flourAddRaw,
+    waterAddRaw,
+    hydro: H,
+    total: L
+  };
+}
+
+function computeLevainTotalsFromAddsStarter(flourAdd, waterAdd, S) {
+  const sF = Math.max(0, S) / 2;
+  const sW = Math.max(0, S) / 2;
+
+  const levFlour = Math.max(0, flourAdd) + sF;
+  const levWater = Math.max(0, waterAdd) + sW;
+
+  const total = levFlour + levWater;
+  const hydro = levFlour > 0 ? (levWater / levFlour) * 100 : 0;
+
+  return { levFlour, levWater, flourAdd: Math.max(0, flourAdd), waterAdd: Math.max(0, waterAdd), flourAddRaw: flourAdd, waterAddRaw: waterAdd, hydro, total };
+}
+
+function setLevainWarning(show) {
+  const w = document.getElementById("levainWarning");
+  if (!w) return;
+  w.style.display = show ? "block" : "none";
+}
+
+function syncLevain() {
+  const L = num("levain");
+  const H = num("levainHydro");
+  const S = num("levainStarter");
+  const fAdd = num("levainFlourAdd");
+  const wAdd = num("levainWaterAdd");
+
+  levainSync = true;
+
+  // Tryb A: total/hydro/starter -> licz dodatki
+  if (lastLevainEdit === "total" || lastLevainEdit === "hydro" || lastLevainEdit === "starter") {
+    const r = computeLevainTotalsFromTotalHydroStarter(L, H, S);
+
+    setOut("levainFlourDisplay", r.levFlour, 1);
+    setOut("levainWaterDisplay", r.levWater, 1);
+
+    setValue("levainFlourAdd", r.flourAdd, 1);
+    setValue("levainWaterAdd", r.waterAdd, 1);
+
+    localStorage.setItem("chleb_levainFlourAdd", document.getElementById("levainFlourAdd").value);
+    localStorage.setItem("chleb_levainWaterAdd", document.getElementById("levainWaterAdd").value);
+
+    // Warning: jeśli starter "zjada" levain (negatywne dodatki)
+    setLevainWarning((L > 0 && H > 0) && (r.flourAddRaw < -1e-9 || r.waterAddRaw < -1e-9));
+
+    levainSync = false;
+    return r;
+  }
+
+  // Tryb B: dodatki -> licz total i hydro
+  const r = computeLevainTotalsFromAddsStarter(fAdd, wAdd, S);
+
+  setOut("levainFlourDisplay", r.levFlour, 1);
+  setOut("levainWaterDisplay", r.levWater, 1);
+
+  setValue("levain", r.total, 1);
+  setValue("levainHydro", r.hydro, 1);
+
+  localStorage.setItem("chleb_levain", document.getElementById("levain").value);
+  localStorage.setItem("chleb_levainHydro", document.getElementById("levainHydro").value);
+
+  // w trybie B warning raczej niepotrzebny (dodatki są >=0), ale zostawiamy off
+  setLevainWarning(false);
+
+  levainSync = false;
+  return r;
+}
+
+/* ===== OBLICZENIA ===== */
+function updateMissingFlourWarning(totalFlourBlend) {
+  const T = num("totalDry");
+  const G = num("glutenProd");
+  const targetFlour = Math.max(0, T - G);
+
+  const el = document.getElementById("missingFlourWarning");
+  if (!el) return;
+
+  if (targetFlour > 0 && totalFlourBlend < targetFlour - 0.5) {
+    const missing = targetFlour - totalFlourBlend;
+    el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby łączna wartość wyniosła ${T.toFixed(0)} g.`;
+    el.style.display = "block";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+function recalc() {
+  const T = num("totalDry");
+
+  // 1) Kluczowy fix: po każdej zmianie bazy/glutenu dopnij cap i ewentualnie przeskaluj mąki
+  if (!percentSync) {
+    for (const k of activeKeys()) syncRowOnBaseChange(k);
+    normalizeAllFloursToTargetIfNeeded();
+  }
+
+  // 2) Gluten produkt
+  const Gprod = num("glutenProd");
+  const gG = Gprod * 0.8;
+  if (T > 0) setOut("gG", gG, 1);
+  else setOut("gG", NaN);
+
+  // 3) Suma mąk (bez glutenu) + gluten z mąk
+  let totalFlourBlend = 0;
+  let sumFlourGluten = 0;
+
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display === "none") {
+      const gEl = document.getElementById("g" + i);
+      if (gEl) gEl.value = "";
+      continue;
+    }
+
+    const mi = num("m" + i);
+    const pi = num("p" + i);
+    const gi = mi * pi / 100;
+
+    totalFlourBlend += mi;
+    sumFlourGluten += gi;
+
+    if (T > 0) setOut("g" + i, gi, 1);
+    else setOut("g" + i, NaN);
+  }
+
+  const mR = num("mR");
+  totalFlourBlend += mR;
+
+  updateMissingFlourWarning(totalFlourBlend);
+
+  // 4) Łączna masa mąki (mąki + gluten)
+  const sumDry = totalFlourBlend + Gprod;
+  const sumGluten = sumFlourGluten + gG;
+
+  if (T <= 0) {
+    setOut("sumDryDisplay", NaN);
+    setOut("sumGlutenDisplay", NaN);
+    setOut("glutenPercentDisplay", NaN);
+  } else {
+    setOut("sumDryDisplay", sumDry, 1);
+    setOut("sumGlutenDisplay", sumGluten, 1);
+    const glutenPct = (sumDry > 0) ? (sumGluten / sumDry) * 100 : 0;
+    setOut("glutenPercentDisplay", glutenPct, 1);
+  }
+
+  // 5) Levain (rozbudowany)
+  const lev = syncLevain();
+  const levFlour = lev?.levFlour || 0;
+  const levWater = lev?.levWater || 0;
+
+  // 6) Hydracja ciasta
+  const totalFlour = sumDry + levFlour;
+
+  if (T <= 0) setOut("totalFlourDisplay", NaN);
+  else setOut("totalFlourDisplay", totalFlour, 1);
+
+  hydroSync = true;
+
+  if (totalFlour > 0) {
+    if (lastHydroEdit === "target") {
+      const targetH = num("targetHydro");
+      const totalWater = (targetH > 0)
+        ? totalFlour * targetH / 100
+        : NaN;
+
+      const addedWater = (!isNaN(totalWater))
+        ? Math.max(0, totalWater - levWater)
+        : NaN;
+
+      if (T <= 0) setOut("totalWaterDisplay", NaN);
+      else setOut("totalWaterDisplay", isNaN(totalWater) ? 0 : totalWater, 1);
+
+      setValue("addedWater", addedWater, 1);
+      localStorage.setItem("chleb_addedWater", document.getElementById("addedWater").value);
+    } else {
+      const aw = Math.max(0, num("addedWater"));
+      const totalWater = levWater + aw;
+      const hydro = totalWater / totalFlour * 100;
+
+      if (T <= 0) setOut("totalWaterDisplay", NaN);
+      else setOut("totalWaterDisplay", totalWater, 1);
+
+      setValue("targetHydro", hydro, 1);
+      localStorage.setItem("chleb_targetHydro", document.getElementById("targetHydro").value);
+    }
+  } else {
+    if (T <= 0) setOut("totalWaterDisplay", NaN);
+    else setOut("totalWaterDisplay", 0, 1);
+  }
+
+  hydroSync = false;
+
+  // 7) Sól
+  const saltPct = num("saltPct");
+  const saltEl = document.getElementById("salt");
+  if (!saltEl) return;
+
+  if (T <= 0) {
+    saltEl.value = DASH;
+  } else {
+    const salt = (saltPct > 0) ? (T * saltPct / 100) : 0;
+    saltEl.value = salt.toFixed(1);
+  }
+}
+
+/* ===== RESET ===== */
+function clearFields() {
+  clearStoredFields();
+
+  flourCount = 3;
+  saveFlourCount();
+  updateFlourVisibility();
+
+  [
+    "totalDry","saltPct",
+    "flourName1","flourName2","flourName3","flourName4","flourName5",
+    "m1","m2","m3","m4","m5",
+    "pct1","pct2","pct3","pct4","pct5",
+    "p1","p2","p3","p4","p5",
+    "mR","pctR",
+    "glutenProd",
+    "levain","levainHydro","levainStarter","levainFlourAdd","levainWaterAdd",
+    "targetHydro","addedWater"
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  const saltPctEl = document.getElementById("saltPct");
+  if (saltPctEl) saltPctEl.value = "2";
+
+  const st = document.getElementById("levainStarter");
+  if (st) st.value = "40";
+
+  const summary = document.getElementById("recipeSummary");
+  if (summary) summary.value = "";
+
+  const pw = document.getElementById("percentWarning");
+  if (pw) pw.style.display = "none";
+  const mw = document.getElementById("missingFlourWarning");
+  if (mw) mw.style.display = "none";
+
+  setLevainWarning(false);
+
+  ["sumDryDisplay","sumGlutenDisplay","glutenPercentDisplay",
+   "levainFlourDisplay","levainWaterDisplay",
+   "totalFlourDisplay","totalWaterDisplay"].forEach(id => setOut(id, NaN));
+
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const el = document.getElementById("g" + i);
+    if (el) el.value = DASH;
+  }
+  const gGEl = document.getElementById("gG");
+  if (gGEl) gGEl.value = DASH;
+
+  const saltEl = document.getElementById("salt");
+  if (saltEl) saltEl.value = DASH;
+
+  recalc();
+}
+
+/* ===== PRZEPIS ===== */
+function generateRecipe() {
+  const lines = [];
+
+  const totalDry = num("totalDry");
+  const G = num("glutenProd");
+
+  const L = num("levain");
+  const Lh = num("levainHydro");
+  const S = num("levainStarter");
+  const levFlourAdd = num("levainFlourAdd");
+  const levWaterAdd = num("levainWaterAdd");
+
+  const targetHydro = num("targetHydro");
+  const addedWater = num("addedWater");
+
+  const saltPct = num("saltPct");
+  const saltText = (document.getElementById("salt")?.value || DASH);
+
+  const sumDryText = document.getElementById("sumDryDisplay").value;
+  const sumGlutenText = document.getElementById("sumGlutenDisplay").value;
+  const glutenPctText = document.getElementById("glutenPercentDisplay").value;
+  const levFlourText = document.getElementById("levainFlourDisplay").value;
+  const levWaterText = document.getElementById("levainWaterDisplay").value;
+  const totalFlourText = document.getElementById("totalFlourDisplay").value;
+  const totalWaterText = document.getElementById("totalWaterDisplay").value;
+
+  lines.push("PRZEPIS – chleb na zakwasie\n");
+
+  if (totalDry > 0)
+    lines.push("Masa mąki, na której opiera się przepis: " + totalDry.toFixed(1) + " g\n");
+
+  lines.push("Kompozycja mąk:");
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const row = document.getElementById("flourRow" + i);
+    if (row && row.style.display === "none") continue;
+
+    const mi = num("m" + i);
+    const pi = num("p" + i);
+    const name = (document.getElementById("flourName" + i)?.value || `Mąka ${i}`);
+    if (mi > 0) lines.push(`- ${name}: ${mi.toFixed(1)} g (białko: ${pi.toFixed(1)} g/100 g)`);
+  }
+  const mr = num("mR");
+  if (mr > 0) lines.push(`- Mąka żytnia: ${mr.toFixed(1)} g`);
+  if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
+
+  lines.push("\nZawartość glutenu:");
+  if (sumDryText !== DASH) lines.push("- Łączna masa mąki: " + sumDryText + " g");
+  if (sumGlutenText !== DASH) lines.push("- Zawartość glutenu w mieszance: " + sumGlutenText + " g");
+  if (glutenPctText !== DASH) lines.push("- Zawartość glutenu [%]: " + glutenPctText + "%");
+
+  lines.push("\nZaczyn (levain):");
+  if (L > 0) lines.push("- Potrzebna ilość levainu: " + L.toFixed(1) + " g");
+  if (Lh > 0) lines.push("- Hydracja levainu: " + Lh.toFixed(1) + "%");
+  if (S > 0) lines.push("- Starter (100%): " + S.toFixed(1) + " g");
+  if (levFlourAdd > 0 || levWaterAdd > 0) {
+    lines.push("- Mąka do dodania: " + levFlourAdd.toFixed(1) + " g");
+    lines.push("- Woda do dodania: " + levWaterAdd.toFixed(1) + " g");
+  }
+  if (levFlourText !== DASH) lines.push("- Mąka w levainie (łącznie): " + levFlourText + " g");
+  if (levWaterText !== DASH) lines.push("- Woda w levainie (łącznie): " + levWaterText + " g");
+
+  lines.push("\nHydracja ciasta:");
+  if (targetHydro > 0) lines.push("- Docelowa hydracja: " + targetHydro.toFixed(1) + "%");
+  if (totalFlourText !== DASH) lines.push("- Łączna masa mąki (mieszanka + zaczyn): " + totalFlourText + " g");
+  if (totalWaterText !== DASH) lines.push("- Łączna ilość wody (łącznie z zaczynem): " + totalWaterText + " g");
+  if (addedWater > 0) lines.push("- Woda do dodania: " + addedWater.toFixed(1) + " g");
+
+  lines.push("\nSól:");
+  if (saltText !== DASH) lines.push(`- Dodatek soli (${saltPct.toFixed(1)}%): ${saltText} g`);
+
+  document.getElementById("recipeSummary").value = lines.join("\n");
+}
+
+/* ===== Obsługa inputów % i g ===== */
+function bindFlourInputs() {
+
+  // Nazwy: pusta nazwa na BLUR resetuje cały wiersz
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const nameEl = document.getElementById("flourName" + i);
+    if (!nameEl) continue;
+
+    nameEl.addEventListener("blur", () => {
+      const name = (nameEl.value || "").trim();
+      if (name === "") {
+        clearFlourRow(i);
+        return;
+      }
+      localStorage.setItem("chleb_flourName" + i, nameEl.value);
+      recalc();
+    });
+  }
+
+  // Mąki 1..5
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const key = String(i);
+    const mEl = document.getElementById("m" + i);
+    const pctEl = document.getElementById("pct" + i);
+    const pEl = document.getElementById("p" + i);
+
+    if (pEl) {
+      pEl.addEventListener("input", () => {
+        ensureDefaultName(i);
+        recalc();
+      });
+    }
+
+    if (mEl) {
+      mEl.addEventListener("input", (e) => {
+        if (percentSync) return;
+
+        ensureDefaultName(i);
+
+        const raw = (mEl.value || "").trim();
+        const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+        if (raw === "") {
+          pctFromGrams(key);
+          recalc();
+          return;
+        }
+
+        if (/[.,]$/.test(raw) || isDeleting) {
+          pctFromGrams(key);
+          recalc();
+          return;
+        }
+
+        const target = flourTargetMass();
+        const val = num(mId(key));
+
+        if (target > 0 && val >= target - 1e-9) {
+          percentSync = true;
+          setUserValue(mId(key), target, 1);
+          setUserValue(pctId(key), 100, 1);
+          percentSync = false;
+          zeroOthers(key);
+          recalc();
+          return;
+        }
+
+        pctFromGrams(key);
+        normalizeGrams(key);
+        for (const k of activeKeys()) pctFromGrams(k);
+
+        recalc();
+      });
+    }
+
+    if (pctEl) {
+      pctEl.addEventListener("input", (e) => {
+        if (percentSync) return;
+
+        ensureDefaultName(i);
+
+        const raw = (pctEl.value || "").trim();
+        const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+        if (raw === "") {
+          gramsFromPct(key);
+          recalc();
+          return;
+        }
+
+        if (/[.,]$/.test(raw) || isDeleting) {
+          gramsFromPct(key);
+          recalc();
+          return;
+        }
+
+        const val = num(pctId(key));
+
+        if (val >= 100 - 1e-9) {
+          percentSync = true;
+          setUserValue(pctId(key), 100, 1);
+          percentSync = false;
+          zeroOthers(key);
+          gramsFromPct(key);
+          recalc();
+          return;
+        }
+
+        gramsFromPct(key);
+        normalizePercents(key);
+        for (const k of activeKeys()) gramsFromPct(k);
+
+        recalc();
+      });
+    }
+  }
+
+  // Rye
+  const mR = document.getElementById("mR");
+  const pctR = document.getElementById("pctR");
+
+  if (mR) {
+    mR.addEventListener("input", (e) => {
+      if (percentSync) return;
+
+      const raw = (mR.value || "").trim();
+      const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+      if (raw === "") {
+        pctFromGrams("R");
+        recalc();
+        return;
+      }
+      if (/[.,]$/.test(raw) || isDeleting) {
+        pctFromGrams("R");
+        recalc();
+        return;
+      }
+
+      const target = flourTargetMass();
+      const val = num("mR");
+
+      if (target > 0 && val >= target - 1e-9) {
+        percentSync = true;
+        setUserValue("mR", target, 1);
+        setUserValue("pctR", 100, 1);
+        percentSync = false;
+        zeroOthers("R");
+        recalc();
+        return;
+      }
+
+      pctFromGrams("R");
+      normalizeGrams("R");
+      for (const k of activeKeys()) pctFromGrams(k);
+
+      recalc();
+    });
+  }
+
+  if (pctR) {
+    pctR.addEventListener("input", (e) => {
+      if (percentSync) return;
+
+      const raw = (pctR.value || "").trim();
+      const isDeleting = (e && e.inputType === "deleteContentBackward");
+
+      if (raw === "") {
+        gramsFromPct("R");
+        recalc();
+        return;
+      }
+      if (/[.,]$/.test(raw) || isDeleting) {
+        gramsFromPct("R");
+        recalc();
+        return;
+      }
+
+      const val = num("pctR");
+
+      if (val >= 100 - 1e-9) {
+        percentSync = true;
+        setUserValue("pctR", 100, 1);
+        percentSync = false;
+        zeroOthers("R");
+        gramsFromPct("R");
+        recalc();
+        return;
+      }
+
+      gramsFromPct("R");
+      normalizePercents("R");
+      for (const k of activeKeys()) gramsFromPct(k);
+
+      recalc();
+    });
+  }
+
+  // Masa bazowa / gluten: po zmianie dopnij cap i ewentualnie przeskaluj mąki
+  const totalDry = document.getElementById("totalDry");
+  const gluten = document.getElementById("glutenProd");
+  const onBaseChange = () => {
+    if (percentSync) return;
+
+    for (const k of activeKeys()) syncRowOnBaseChange(k);
+    normalizeAllFloursToTargetIfNeeded();
+    recalc();
+  };
+  if (totalDry) totalDry.addEventListener("input", onBaseChange);
+  if (gluten) gluten.addEventListener("input", onBaseChange);
+
+  // Levain: mark last edit (żeby logika była stabilna)
+  const levain = document.getElementById("levain");
+  const levainHydro = document.getElementById("levainHydro");
+  const levainStarter = document.getElementById("levainStarter");
+  const levainFlourAdd = document.getElementById("levainFlourAdd");
+  const levainWaterAdd = document.getElementById("levainWaterAdd");
+
+  const levMark = (k) => () => { if (!levainSync) lastLevainEdit = k; };
+
+  if (levain) levain.addEventListener("input", levMark("total"));
+  if (levainHydro) levainHydro.addEventListener("input", levMark("hydro"));
+  if (levainStarter) levainStarter.addEventListener("input", levMark("starter"));
+  if (levainFlourAdd) levainFlourAdd.addEventListener("input", levMark("flourAdd"));
+  if (levainWaterAdd) levainWaterAdd.addEventListener("input", levMark("waterAdd"));
+}
+
+/* ===== INIT ===== */
+restoreFields();
+loadFlourCount();
+updateFlourVisibility();
+setupAutosave();
+bindFlourInputs();
+recalc();
+
+/* Dodaj mąkę */
+document.getElementById("addFlourBtn").addEventListener("click", () => {
+  if (flourCount < MAX_FLOURS) {
+    flourCount++;
+    saveFlourCount();
+    updateFlourVisibility();
+    recalc();
+  }
+});
+
+/* SERVICE WORKER */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js")
+      .catch(err => console.error("SW registration failed:", err));
+  });
+}
+</script>
+
+</body>
+</html>
