@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chleb na zakwasie — Kalkulator zawartości glutenu i hydracji ciasta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- iOS PWA support -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" href="bread-icon.png" />
+
+  <style>
+    :root{ --v-gap: 0.75rem; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 1rem;
+      line-height: 1.4;
+      background: #fff;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .title-icon { width: 30px; height: 30px; object-fit: contain; }
+    h1 { font-size: 1.35rem; margin: 0; }
+    h2 { font-size: 1.1rem; }
+
+    .section {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .section h2 { margin: 0.2rem 0; }
+
+    label, .field-label {
+      font-size: 0.82rem;
+      color: #222;
+      line-height: 1.25;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.86rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 400;
+    }
+
+    input:not([readonly]),
+    textarea:not([readonly]) {
+      background-color: #e6f4ff;
+      transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+
+    input:not([readonly]):focus,
+    textarea:not([readonly]):focus {
+      background-color: #d8eeff;
+      box-shadow: 0 0 0 2px #99cfff;
+      border-color: #66aef5;
+      outline: none;
+    }
+
+    input[readonly] {
+      background-color: #f5f5f5;
+      border-color: #ddd;
+      cursor: default;
+      font-weight: 400;
+    }
+
+    .out {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.86rem;
+      font-weight: 400;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 2.1rem;
+      box-sizing: border-box;
+      display: block;
+      width: 100%;
+      cursor: default;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.6fr 170px;
+      column-gap: 1rem;
+      row-gap: var(--v-gap);
+      max-width: 650px;
+      align-items: start;
+    }
+
+    .grid label,
+    .grid .field-label {
+      align-self: center;
+    }
+
+    .grid input[type="number"],
+    .grid input[type="text"],
+    .grid .out {
+      width: 100%;
+      justify-self: start;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    .btn {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.82rem;
+      border-radius: 999px;
+      border: 1px solid #777;
+      background: #f3f3f3;
+      cursor: pointer;
+      text-align: center;
+      white-space: normal;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+    }
+
+    .btn:hover { background: #e8e8e8; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-row {
+      display: flex;
+      gap: var(--v-gap);
+      align-items: center;
+      margin-bottom: var(--v-gap);
+    }
+    .btn-row .btn { flex: 1 1 0; width: auto; }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 0;
+    }
+
+    /* ===== TABELA MĄK ===== */
+    .flour-table { display: block; }
+
+    .flour-row {
+      display: grid;
+      grid-template-columns: 1fr 0.8fr 0.8fr 0.8fr 0.9fr;
+      gap: 0.3rem;
+      margin-bottom: 0.3rem;
+      max-width: 900px;
+      align-items: center;
+    }
+
+    .flour-header {
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .flour-row input[type="text"],
+    .flour-row input[type="number"]{
+      height: 2.1rem;
+    }
+
+    .fake-input{
+      height: 2.1rem;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.35rem 0.45rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: normal;
+      text-align: center;
+    }
+
+    .gluten-name{
+      font-size: 0.65rem;
+      line-height: 1.05;
+      text-align: center;
+    }
+
+    #percentWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top: 0.25rem;
+      max-width: 900px;
+    }
+
+    #missingFlourWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top:0.2rem;
+    }
+
+    #levainWarning{
+      display:none;
+      color:#d33;
+      font-size:0.82rem;
+      margin-top:0.2rem;
+      max-width: 650px;
+    }
+
+    #recipeSummary {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    @media (max-width: 700px) {
+      body { margin: 0.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="title-row">
+  <img src="bread-icon.png" alt="" class="title-icon" />
+  <h1>Chleb na zakwasie</h1>
+</div>
+
+<div style="font-size: 0.95rem; color:#444; margin-bottom:1rem;">
+  <strong>Kalkulator zawartości glutenu i hydracji ciasta</strong>
+</div>
+
+<!-- 1 -->
+<div class="section">
+  <h2>1. Masa bazowa mąki</h2>
+  <div class="grid">
+    <label for="totalDry">Ilość mąki, na której opiera się przepis [g]</label>
+    <input type="number" id="totalDry" step="1" min="0" inputmode="decimal"/>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="section">
+  <h2>2. Kompozycja mąk</h2>
+
+  <p class="hint">
+    Możesz wpisywać ilości [g] albo udziały [%]. Kalkulator automatycznie dopasuje pozostałe wartości do limitów (100% / masa bazowa).
+    Gluten witalny wlicza się do masy całkowitej, ale nie wlicza się do procentów mąk.
+  </p>
+
+  <div class="flour-table">
+
+    <div class="flour-row flour-header">
+      <div class="field-label">Typ</div>
+      <div class="field-label">Ilość [g]</div>
+      <div class="field-label">Udział [%]</div>
+      <div class="field-label">Białko [g/100 g]</div>
+      <div class="field-label">Gluten z mąki [g]</div>
+    </div>
+
+    <div class="flour-row" id="flourRow1">
+      <input type="text" id="flourName1" placeholder="np. T110" />
+      <input type="number" id="m1" step="1" min="0" inputmode="decimal"/>
+      <input type="number" id="pct1" step="0.1" min="0" max="100" inputmode="decimal"/>
+      <input type="number" id="p1" step="0.1" min="0" inputmode="decimal"/>
+      <input type="text" id="g1" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow2">
+      <input type="text" id="flourName2" placeholder="np. T80 ancient" />
+      <input type="number" id="m2" step="1" min="0" inputmode="decimal"/>
+      <input type="number" id="pct2" step="0.1" min="0" max="100" inputmode="decimal"/>
+      <input type="number" id="p2" step="0.1" min="0" inputmode="decimal"/>
+      <input type="text" id="g2" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow3">
+      <input type="text" id="flourName3" placeholder="np. T65" />
+      <input type="number" id="m3" step="1" min="0" inputmode="decimal"/>
+      <input type="number" id="pct3" step="0.1" min="0" max="100" inputmode="decimal"/>
+      <input type="number" id="p3" step="0.1" min="0" inputmode="decimal"/>
+      <input type="text" id="g3" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow4" style="display:none;">
+      <input type="text" id="flourName4" placeholder="np. T150" />
+      <input type="number" id="m4" step="1" min="0" inputmode="decimal"/>
+      <input type="number" id="pct4" step="0.1" min="0" max="100" inputmode="decimal"/>
+      <input type="number" id="p4" step="0.1" min="0" inputmode="decimal"/>
+      <input type="text" id="g4" readonly />
+    </div>
+
+    <div class="flour-row" id="flourRow5" style="display:none;">
+      <input type="text" id="flourName5" placeholder="np. Manitoba" />
+      <input type="number" id="m5" step="1" min="0" inputmode="decimal"/>
+      <input type="number" id="pct5" step="0.1" min="0" max="100" inputmode="decimal"/>
+      <input type="number" id="p5" step="0.1" min="0" inputmode="decimal"/>
+      <input type="text" id="g5" readonly />
+    </div>
+
+    <!-- Żytnia -->
+    <div class="flour-row" id="ryeRow">
+      <div class="fake-input gluten-name">Mąka<br>żytnia</div>
+      <input type="number" id="mR" step="1" min="0" inputmode="decimal"/>
+      <input type="number" id="pctR" step="0.1" min="0" max="100" inputmode="decimal"/>
+      <input type="text" id="pR" value="—" readonly />
+      <input type="text" id="gR" value="—" readonly />
+    </div>
+
+    <!-- Gluten -->
+    <div class="flour-row" id="glutenRow">
+      <div class="fake-input gluten-name">Gluten<br>witalny</div>
+      <input type="number" id="glutenProd" step="0.5" min="0" inputmode="decimal"/>
+      <input type="text" id="pctG" value="—" readonly />
+      <input type="number" id="pG" value="80" readonly />
+      <input type="text" id="gG" readonly />
+    </div>
+
+  </div>
+
+  <div id="percentWarning"></div>
+
+  <div class="grid" style="margin-top: var(--v-gap);">
+    <span></span>
+    <button class="btn" id="addFlourBtn" type="button">Dodaj kolejną mąkę (max 5)</button>
+  </div>
+
+  <div class="grid" style="margin-top: var(--v-gap);">
+    <span class="field-label">Łączna masa mąki [g]</span>
+    <div>
+      <input class="out" type="text" id="sumDryDisplay" value="—" readonly />
+      <div id="missingFlourWarning"></div>
+    </div>
+
+    <span class="field-label">Zawartość glutenu w mieszance [g]</span>
+    <input class="out" type="text" id="sumGlutenDisplay" value="—" readonly />
+
+    <span class="field-label">Zawartość glutenu w mieszance [%]</span>
+    <input class="out" type="text" id="glutenPercentDisplay" value="—" readonly />
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="section">
+  <h2>3. Zaczyn (levain)</h2>
+
+  <p class="hint">
+    Możesz policzyć zaczyn o dowolnej hydracji (np. 70%). Starter zakładamy jako 100% hydracji (połowa mąka, połowa woda).
+    Pola „mąka do dodania” i „woda do dodania” są edytowalne — możesz też startować od nich.
+  </p>
+
+  <div class="grid">
+    <label for="levain">Ilość zaczynu [g]</label>
+    <input type="number" id="levain" step="1" min="0" inputmode="decimal"/>
+
+    <label for="levainHydro">Hydracja zaczynu [%]</label>
+    <input type="number" id="levainHydro" step="1" min="0" inputmode="decimal"/>
+
+    <label for="levainStarter">Starter (100% hydr.) [g]</label>
+    <input type="number" id="levainStarter" step="1" min="0" inputmode="decimal" placeholder="np. 40"/>
+
+    <label for="levainFlourAdd">Mąka do dodania [g]</label>
+    <input type="number" id="levainFlourAdd" step="1" min="0" inputmode="decimal"/>
+
+    <label for="levainWaterAdd">Woda do dodania [g]</label>
+    <input type="number" id="levainWaterAdd" step="1" min="0" inputmode="decimal"/>
+
+    <span class="field-label">Mąka w zaczynie (łącznie) [g]</span>
+    <input class="out" type="text" id="levainFlourDisplay" value="—" readonly />
+
+    <span class="field-label">Woda w zaczynie (łącznie) [g]</span>
+    <input class="out" type="text" id="levainWaterDisplay" value="—" readonly />
+  </div>
+
+  <div id="levainWarning">Ilość startera przekracza założoną masę zaczynu. Zmniejsz jego ilość!</div>
+</div>
+
+<!-- 4 -->
+<div class="section">
+  <h2>4. Hydracja ciasta</h2>
+
+  <div class="grid">
+    <label for="targetHydro">Docelowa hydracja ciasta [%]</label>
+    <input type="number" id="targetHydro" step="0.5" min="0" inputmode="decimal"/>
+
+    <label for="addedWater">Woda do dodania [g]</label>
+    <input type="number" id="addedWater" step="1" min="0" inputmode="decimal"/>
+
+    <span class="field-label">Łączna masa mąki (mieszanka + zaczyn) [g]</span>
+    <input class="out" type="text" id="totalFlourDisplay" value="—" readonly />
+
+    <span class="field-label">Łączna ilość wody (łącznie z zaczynem) [g]</span>
+    <input class="out" type="text" id="totalWaterDisplay" value="—" readonly />
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="section">
+  <h2>5. Sól</h2>
+
+  <div class="grid">
+    <label for="saltPct">Procent soli (względem masy mieszanki mąk) [%]</label>
+    <input type="number" id="saltPct" step="0.1" min="0" inputmode="decimal"/>
+
+    <label for="salt">Dodatek soli [g]</label>
+    <input type="text" id="salt" readonly value="—" />
+  </div>
+</div>
+
+<!-- 6 -->
+<div class="section">
+  <h2>6. Podsumowanie przepisu</h2>
+
+  <div class="btn-row">
+    <button class="btn" type="button" id="saveRecipeBtn">ZAPISZ PRZEPIS</button>
+    <button class="btn" type="button" id="clearBtn">WYCZYŚĆ POLA</button>
+  </div>
+
+  <textarea id="recipeSummary" readonly placeholder="Tutaj pojawi się podsumowanie przepisu..."></textarea>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const DASH = "—";
+  const MAX_FLOURS = 5;
+  const STORAGE_KEY = "chleb_state_v5";
+  const STORAGE_COUNT_KEY = "chleb_flourCount";
+
+  const $ = (id) => document.getElementById(id);
+
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const isFiniteNum = (x) => typeof x === "number" && Number.isFinite(x);
+  const toNum = (s) => {
+    const v = parseFloat(String(s ?? "").replace(",", "."));
+    return Number.isFinite(v) ? v : null;
+  };
+  const fmt = (x, d=1) => isFiniteNum(x) ? x.toFixed(d) : DASH;
+
+  const isFocused = (id) => document.activeElement && document.activeElement.id === id;
+
+  function setIfNotFocused(id, value) {
+    const el = $(id);
+    if (!el) return;
+    if (isFocused(id)) return;
+    el.value = value;
+  }
+
+  function setOut(id, value, d=1) {
+    const el = $(id);
+    if (!el) return;
+    el.value = fmt(value, d);
+  }
+
+  function showScaleMessage(text) {
+    const el = $("percentWarning");
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = "block";
+    clearTimeout(showScaleMessage._t);
+    showScaleMessage._t = setTimeout(() => { el.style.display = "none"; }, 2500);
+  }
+
+  function setLevainWarning(show) {
+    const w = $("levainWarning");
+    if (!w) return;
+    w.style.display = show ? "block" : "none";
+  }
+
+  function activeKeys(flourCount) {
+    const keys = [];
+    for (let i = 1; i <= flourCount; i++) keys.push(String(i));
+    keys.push("R");
+    return keys;
+  }
+  const mId = (k) => k === "R" ? "mR" : `m${k}`;
+  const pctId = (k) => k === "R" ? "pctR" : `pct${k}`;
+  const nameId = (k) => k === "R" ? null : `flourName${k}`;
+  const protId = (k) => k === "R" ? null : `p${k}`;
+  const glutenOutId = (k) => k === "R" ? "gR" : `g${k}`;
+
+  const defaultState = () => ({
+    flourCount: 3,
+    totalDry: null,
+    saltPct: 2,
+    glutenProd: null,
+
+    flours: {
+      "1": { name: "", grams: null, pct: null, protein: null, last: null },
+      "2": { name: "", grams: null, pct: null, protein: null, last: null },
+      "3": { name: "", grams: null, pct: null, protein: null, last: null },
+      "4": { name: "", grams: null, pct: null, protein: null, last: null },
+      "5": { name: "", grams: null, pct: null, protein: null, last: null },
+      "R": { grams: null, pct: null, last: null },
+    },
+
+    levain: { total: null, hydro: null, starter: null, flourAdd: null, waterAdd: null, last: "total" },
+    hydro: { target: null, addedWater: null, last: "target" },
+    recipeText: ""
+  });
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        const s = defaultState();
+        const savedCount = parseInt(localStorage.getItem(STORAGE_COUNT_KEY) || "3", 10);
+        if (Number.isFinite(savedCount)) s.flourCount = clamp(savedCount, 3, MAX_FLOURS);
+        return s;
+      }
+      const s = JSON.parse(raw);
+      const base = defaultState();
+
+      const out = {...base, ...s};
+      out.flourCount = clamp(parseInt(out.flourCount || 3, 10), 3, MAX_FLOURS);
+
+      out.flours = {...base.flours, ...(s.flours || {})};
+      for (const k of ["1","2","3","4","5"]) out.flours[k] = {...base.flours[k], ...(out.flours[k] || {})};
+      out.flours["R"] = {...base.flours["R"], ...(out.flours["R"] || {})};
+
+      out.levain = {...base.levain, ...(s.levain || {})};
+      out.hydro  = {...base.hydro,  ...(s.hydro  || {})};
+
+      return out;
+    } catch (e) {
+      console.warn("state load failed:", e);
+      return defaultState();
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_COUNT_KEY, String(state.flourCount));
+  }
+
+  let state = loadState();
+
+  function flourTargetMass() {
+    const T = state.totalDry ?? 0;
+    const G = state.glutenProd ?? 0;
+    if (!(T > 0)) return 0;
+    return Math.max(0, T - G);
+  }
+
+  function normalizePercents(lockedKey) {
+    const keys = activeKeys(state.flourCount);
+    let total = 0;
+    for (const k of keys) total += (state.flours[k].pct ?? 0);
+    if (total <= 100 + 1e-9) return;
+
+    const lockedPct = state.flours[lockedKey].pct ?? 0;
+    const rest = total - lockedPct;
+    const target = 100 - lockedPct;
+    if (target < 0) return;
+
+    for (const k of keys) {
+      if (k === lockedKey) continue;
+      const v = state.flours[k].pct ?? 0;
+      state.flours[k].pct = rest > 0 ? (v * target / rest) : 0;
+    }
+    showScaleMessage("Przeskalowano wartości do 100%");
+  }
+
+  function normalizeGrams(lockedKey) {
+    const target = flourTargetMass();
+    if (!(target > 0)) return;
+
+    const keys = activeKeys(state.flourCount);
+    let total = 0;
+    for (const k of keys) total += (state.flours[k].grams ?? 0);
+    if (total <= target + 1e-9) return;
+
+    const lockedG = state.flours[lockedKey].grams ?? 0;
+    const rest = total - lockedG;
+    const remaining = target - lockedG;
+    if (remaining < 0) return;
+
+    for (const k of keys) {
+      if (k === lockedKey) continue;
+      const v = state.flours[k].grams ?? 0;
+      state.flours[k].grams = rest > 0 ? (v * remaining / rest) : 0;
+    }
+    const T = state.totalDry ?? 0;
+    showScaleMessage(`Przeskalowano mąki do masy bazowej ${T.toFixed(0)} g`);
+  }
+
+  function gramsFromPct(k) {
+    const target = flourTargetMass();
+    if (!(target > 0)) return;
+    const pct = state.flours[k].pct;
+    if (pct == null) { state.flours[k].grams = null; return; }
+    state.flours[k].grams = target * (pct / 100);
+  }
+
+  function pctFromGrams(k) {
+    const target = flourTargetMass();
+    if (!(target > 0)) return;
+    const g = state.flours[k].grams;
+    if (g == null) { state.flours[k].pct = null; return; }
+    state.flours[k].pct = (g / target) * 100;
+  }
+
+  function recomputeFlours(reason) {
+    const keys = activeKeys(state.flourCount);
+    const target = flourTargetMass();
+
+    if (reason === "base" && target > 0) {
+      for (const k of keys) {
+        const last = state.flours[k].last;
+        if (last === "pct") gramsFromPct(k);
+        else if (last === "grams") pctFromGrams(k);
+      }
+    }
+
+    if (!(target > 0)) return;
+
+    for (const k of keys) {
+      const row = state.flours[k];
+      if (row.last === "pct") gramsFromPct(k);
+      else if (row.last === "grams") pctFromGrams(k);
+      else {
+        if (row.pct != null && row.grams == null) gramsFromPct(k);
+        else if (row.grams != null && row.pct == null) pctFromGrams(k);
+      }
+    }
+  }
+
+  function computeLevainTotalsFromTotalHydroStarter(L, H, S) {
+    const sF = Math.max(0, S) / 2;
+    const sW = Math.max(0, S) / 2;
+
+    if (!(L > 0) || !(H > 0)) {
+      return { levFlour: 0, levWater: 0, flourAdd: 0, waterAdd: 0, flourAddRaw: 0, waterAddRaw: 0, hydro: H || 0, total: L || 0 };
+    }
+
+    const levFlour = L / (1 + H / 100);
+    const levWater = L - levFlour;
+
+    const flourAddRaw = levFlour - sF;
+    const waterAddRaw = levWater - sW;
+
+    return {
+      levFlour, levWater,
+      flourAdd: Math.max(0, flourAddRaw),
+      waterAdd: Math.max(0, waterAddRaw),
+      flourAddRaw, waterAddRaw,
+      hydro: H, total: L
+    };
+  }
+
+  function computeLevainTotalsFromAddsStarter(flourAdd, waterAdd, S) {
+    const sF = Math.max(0, S) / 2;
+    const sW = Math.max(0, S) / 2;
+
+    const levFlour = Math.max(0, flourAdd) + sF;
+    const levWater = Math.max(0, waterAdd) + sW;
+
+    const total = levFlour + levWater;
+    const hydro = levFlour > 0 ? (levWater / levFlour) * 100 : 0;
+
+    return { levFlour, levWater, flourAdd: Math.max(0, flourAdd), waterAdd: Math.max(0, waterAdd), flourAddRaw: flourAdd, waterAddRaw: waterAdd, hydro, total };
+  }
+
+  function recomputeLevain() {
+    const L = state.levain.total ?? 0;
+    const H = state.levain.hydro ?? 0;
+    const S = state.levain.starter ?? 0;
+    const fAdd = state.levain.flourAdd ?? 0;
+    const wAdd = state.levain.waterAdd ?? 0;
+
+    if (state.levain.last === "total" || state.levain.last === "hydro" || state.levain.last === "starter") {
+      const r = computeLevainTotalsFromTotalHydroStarter(L, H, S);
+      state._levainComputed = r;
+      state.levain.flourAdd = r.flourAdd;
+      state.levain.waterAdd = r.waterAdd;
+      setLevainWarning((L > 0 && H > 0) && (r.flourAddRaw < -1e-9 || r.waterAddRaw < -1e-9));
+      return r;
+    } else {
+      const r = computeLevainTotalsFromAddsStarter(fAdd, wAdd, S);
+      state._levainComputed = r;
+      state.levain.total = r.total;
+      state.levain.hydro = r.hydro;
+      setLevainWarning(false);
+      return r;
+    }
+  }
+
+  function recomputeHydration(levFlour, levWater, sumDry) {
+    const totalFlour = (sumDry ?? 0) + (levFlour ?? 0);
+    const targetH = state.hydro.target ?? 0;
+    const aw = state.hydro.addedWater ?? 0;
+
+    let totalWater = 0;
+
+    if (totalFlour > 0) {
+      if (state.hydro.last === "target") {
+        totalWater = targetH > 0 ? (totalFlour * targetH / 100) : 0;
+        const addedWater = Math.max(0, totalWater - (levWater ?? 0));
+        state.hydro.addedWater = addedWater;
+      } else {
+        totalWater = (levWater ?? 0) + Math.max(0, aw);
+        const hydro = (totalWater / totalFlour) * 100;
+        state.hydro.target = hydro;
+      }
+    }
+
+    state._hydrationComputed = { totalFlour, totalWater };
+    return { totalFlour, totalWater };
+  }
+
+  function updateFlourVisibility() {
+    for (let i = 4; i <= MAX_FLOURS; i++) {
+      const row = $("flourRow" + i);
+      if (!row) continue;
+      row.style.display = (i <= state.flourCount) ? "" : "none";
+    }
+    const btn = $("addFlourBtn");
+    if (btn) btn.disabled = state.flourCount >= MAX_FLOURS;
+  }
+
+  function updateMissingFlourWarning(totalFlourBlend) {
+    const T = state.totalDry ?? 0;
+    const G = state.glutenProd ?? 0;
+    const targetFlour = Math.max(0, T - G);
+
+    const el = $("missingFlourWarning");
+    if (!el) return;
+
+    if (targetFlour > 0 && totalFlourBlend < targetFlour - 0.5) {
+      const missing = targetFlour - totalFlourBlend;
+      el.textContent = `Dodaj ${missing.toFixed(0)} g mąki, aby łączna wartość wyniosła ${T.toFixed(0)} g.`;
+      el.style.display = "block";
+    } else {
+      el.style.display = "none";
+    }
+  }
+
+  function render() {
+    updateFlourVisibility();
+
+    setIfNotFocused("totalDry", state.totalDry == null ? "" : String(state.totalDry));
+    setIfNotFocused("saltPct", state.saltPct == null ? "" : String(state.saltPct));
+    setIfNotFocused("glutenProd", state.glutenProd == null ? "" : String(state.glutenProd));
+
+    const keys = activeKeys(state.flourCount);
+    for (const k of keys) {
+      if (k !== "R") {
+        setIfNotFocused(nameId(k), state.flours[k].name ?? "");
+        setIfNotFocused(protId(k), state.flours[k].protein == null ? "" : String(state.flours[k].protein));
+      }
+
+      const g = state.flours[k].grams;
+      const pct = state.flours[k].pct;
+
+      setIfNotFocused(mId(k), g == null ? "" : g.toFixed(1));
+      setIfNotFocused(pctId(k), pct == null ? "" : pct.toFixed(1));
+    }
+
+    setIfNotFocused("levain", state.levain.total == null ? "" : state.levain.total.toFixed(1));
+    setIfNotFocused("levainHydro", state.levain.hydro == null ? "" : state.levain.hydro.toFixed(1));
+    setIfNotFocused("levainStarter", state.levain.starter == null ? "" : state.levain.starter.toFixed(1));
+    setIfNotFocused("levainFlourAdd", state.levain.flourAdd == null ? "" : state.levain.flourAdd.toFixed(1));
+    setIfNotFocused("levainWaterAdd", state.levain.waterAdd == null ? "" : state.levain.waterAdd.toFixed(1));
+
+    setIfNotFocused("targetHydro", state.hydro.target == null ? "" : state.hydro.target.toFixed(1));
+    setIfNotFocused("addedWater", state.hydro.addedWater == null ? "" : state.hydro.addedWater.toFixed(1));
+
+    setIfNotFocused("recipeSummary", state.recipeText || "");
+  }
+
+  function recalcAndRender(reason="edit") {
+    recomputeFlours(reason);
+
+    const T = state.totalDry ?? 0;
+    const Gprod = state.glutenProd ?? 0;
+    const gG = (Gprod ?? 0) * 0.8;
+    setOut("gG", (T > 0) ? gG : NaN, 1);
+
+    let totalFlourBlend = 0;
+    let sumFlourGluten = 0;
+
+    for (let i = 1; i <= state.flourCount; i++) {
+      const k = String(i);
+      const mi = state.flours[k].grams ?? 0;
+      const pi = state.flours[k].protein ?? 0;
+      const gi = mi * pi / 100;
+
+      totalFlourBlend += mi;
+      sumFlourGluten += gi;
+
+      setOut(glutenOutId(k), (T > 0) ? gi : NaN, 1);
+    }
+
+    const mR = state.flours["R"].grams ?? 0;
+    totalFlourBlend += mR;
+
+    updateMissingFlourWarning(totalFlourBlend);
+
+    const sumDry = totalFlourBlend + (Gprod ?? 0);
+    const sumGluten = sumFlourGluten + (gG ?? 0);
+
+    if (!(T > 0)) {
+      setOut("sumDryDisplay", NaN);
+      setOut("sumGlutenDisplay", NaN);
+      setOut("glutenPercentDisplay", NaN);
+    } else {
+      setOut("sumDryDisplay", sumDry, 1);
+      setOut("sumGlutenDisplay", sumGluten, 1);
+      const glutenPct = (sumDry > 0) ? (sumGluten / sumDry) * 100 : 0;
+      setOut("glutenPercentDisplay", glutenPct, 1);
+    }
+
+    const lev = recomputeLevain();
+    setOut("levainFlourDisplay", lev.levFlour, 1);
+    setOut("levainWaterDisplay", lev.levWater, 1);
+
+    const hyd = recomputeHydration(lev.levFlour, lev.levWater, sumDry);
+    if (!(T > 0)) {
+      setOut("totalFlourDisplay", NaN);
+      setOut("totalWaterDisplay", NaN);
+    } else {
+      setOut("totalFlourDisplay", hyd.totalFlour, 1);
+      setOut("totalWaterDisplay", hyd.totalWater, 1);
+    }
+
+    const saltPct = state.saltPct ?? 0;
+    const saltEl = $("salt");
+    if (saltEl) {
+      if (!(T > 0)) saltEl.value = DASH;
+      else {
+        const salt = (saltPct > 0) ? (T * saltPct / 100) : 0;
+        saltEl.value = salt.toFixed(1);
+      }
+    }
+
+    render();
+    saveState();
+  }
+
+  let scheduled = false;
+  let scheduledReason = "edit";
+  function scheduleRecalc(reason="edit") {
+    scheduledReason = reason;
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      recalcAndRender(scheduledReason);
+    });
+  }
+
+  function ensureDefaultName(i) {
+    const k = String(i);
+    const n = (state.flours[k].name || "").trim();
+    if (!n) state.flours[k].name = `Mąka ${i}`;
+  }
+
+  function bindInputNumber(id, setter, opts={}) {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      const v = toNum(el.value);
+      setter(v);
+      scheduleRecalc(opts.reason || "edit");
+    });
+  }
+
+  function bindInputText(id, setter, opts={}) {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      setter(el.value);
+      scheduleRecalc(opts.reason || "edit");
+    });
+    if (opts.onBlur) el.addEventListener("blur", () => opts.onBlur(el.value));
+  }
+
+  bindInputNumber("totalDry", (v) => { state.totalDry = v; }, { reason: "base" });
+  bindInputNumber("glutenProd", (v) => { state.glutenProd = v; }, { reason: "base" });
+  bindInputNumber("saltPct", (v) => { state.saltPct = v; }, { reason: "edit" });
+
+  for (let i = 1; i <= MAX_FLOURS; i++) {
+    const k = String(i);
+
+    bindInputText(`flourName${i}`, (txt) => { state.flours[k].name = txt; }, {
+      onBlur: (txt) => {
+        const t = (txt || "").trim();
+        if (!t) {
+          state.flours[k].name = "";
+          state.flours[k].grams = null;
+          state.flours[k].pct = null;
+          state.flours[k].protein = null;
+          state.flours[k].last = null;
+        }
+        scheduleRecalc("edit");
+      }
+    });
+
+    bindInputNumber(`p${i}`, (v) => { state.flours[k].protein = v; }, { reason: "edit" });
+
+    bindInputNumber(`m${i}`, (v) => {
+      ensureDefaultName(i);
+      state.flours[k].grams = v;
+      state.flours[k].last = (v == null ? null : "grams");
+      recomputeFlours("edit");
+      if (v != null) normalizeGrams(k);
+      recomputeFlours("edit");
+    }, { reason: "edit" });
+
+    bindInputNumber(`pct${i}`, (v) => {
+      ensureDefaultName(i);
+      state.flours[k].pct = v;
+      state.flours[k].last = (v == null ? null : "pct");
+      recomputeFlours("edit");
+      if (v != null) normalizePercents(k);
+      recomputeFlours("edit");
+    }, { reason: "edit" });
+  }
+
+  bindInputNumber("mR", (v) => {
+    state.flours["R"].grams = v;
+    state.flours["R"].last = (v == null ? null : "grams");
+    recomputeFlours("edit");
+    if (v != null) normalizeGrams("R");
+    recomputeFlours("edit");
+  }, { reason: "edit" });
+
+  bindInputNumber("pctR", (v) => {
+    state.flours["R"].pct = v;
+    state.flours["R"].last = (v == null ? null : "pct");
+    recomputeFlours("edit");
+    if (v != null) normalizePercents("R");
+    recomputeFlours("edit");
+  }, { reason: "edit" });
+
+  bindInputNumber("levain", (v) => { state.levain.total = v; state.levain.last = "total"; }, { reason: "edit" });
+  bindInputNumber("levainHydro", (v) => { state.levain.hydro = v; state.levain.last = "hydro"; }, { reason: "edit" });
+  bindInputNumber("levainStarter", (v) => { state.levain.starter = v; state.levain.last = "starter"; }, { reason: "edit" });
+  bindInputNumber("levainFlourAdd", (v) => { state.levain.flourAdd = v; state.levain.last = "flourAdd"; }, { reason: "edit" });
+  bindInputNumber("levainWaterAdd", (v) => { state.levain.waterAdd = v; state.levain.last = "waterAdd"; }, { reason: "edit" });
+
+  bindInputNumber("targetHydro", (v) => { state.hydro.target = v; state.hydro.last = "target"; }, { reason: "edit" });
+  bindInputNumber("addedWater", (v) => { state.hydro.addedWater = v; state.hydro.last = "water"; }, { reason: "edit" });
+
+  $("addFlourBtn")?.addEventListener("click", () => {
+    if (state.flourCount < MAX_FLOURS) {
+      state.flourCount++;
+      saveState();
+      scheduleRecalc("edit");
+    }
+  });
+
+  $("clearBtn")?.addEventListener("click", () => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_COUNT_KEY);
+    state = defaultState();
+    scheduleRecalc("init");
+  });
+
+  function generateRecipeText() {
+    const lines = [];
+
+    const totalDry = state.totalDry ?? 0;
+    const G = state.glutenProd ?? 0;
+
+    const targetHydro = state.hydro.target ?? 0;
+    const addedWater = state.hydro.addedWater ?? 0;
+
+    const saltPct = state.saltPct ?? 0;
+    const saltText = $("salt")?.value || DASH;
+
+    const sumDryText = $("sumDryDisplay")?.value || DASH;
+    const sumGlutenText = $("sumGlutenDisplay")?.value || DASH;
+    const glutenPctText = $("glutenPercentDisplay")?.value || DASH;
+    const levFlourText = $("levainFlourDisplay")?.value || DASH;
+    const levWaterText = $("levainWaterDisplay")?.value || DASH;
+    const totalFlourText = $("totalFlourDisplay")?.value || DASH;
+    const totalWaterText = $("totalWaterDisplay")?.value || DASH;
+
+    lines.push("PRZEPIS – chleb na zakwasie\n");
+
+    if (totalDry > 0) lines.push("Masa mąki, na której opiera się przepis: " + totalDry.toFixed(1) + " g\n");
+
+    lines.push("Kompozycja mąk:");
+    for (let i = 1; i <= state.flourCount; i++) {
+      const k = String(i);
+      const mi = state.flours[k].grams ?? 0;
+      const pi = state.flours[k].protein ?? 0;
+      const name = (state.flours[k].name || `Mąka ${i}`).trim() || `Mąka ${i}`;
+      if (mi > 0) lines.push(`- ${name}: ${mi.toFixed(1)} g (białko: ${pi.toFixed(1)} g/100 g)`);
+    }
+    const mr = state.flours["R"].grams ?? 0;
+    if (mr > 0) lines.push(`- Mąka żytnia: ${mr.toFixed(1)} g`);
+    if (G > 0) lines.push(`- Gluten witalny (80%): ${G.toFixed(1)} g`);
+
+    lines.push("\nZawartość glutenu:");
+    if (sumDryText !== DASH) lines.push("- Łączna masa mąki: " + sumDryText + " g");
+    if (sumGlutenText !== DASH) lines.push("- Zawartość glutenu w mieszance: " + sumGlutenText + " g");
+    if (glutenPctText !== DASH) lines.push("- Zawartość glutenu [%]: " + glutenPctText + "%");
+
+    lines.push("\nZaczyn:");
+    if ((state.levain.total ?? 0) > 0) lines.push("- Ilość zaczynu: " + (state.levain.total ?? 0).toFixed(1) + " g");
+    if ((state.levain.hydro ?? 0) > 0) lines.push("- Hydracja zaczynu: " + (state.levain.hydro ?? 0).toFixed(1) + "%");
+    if ((state.levain.starter ?? 0) > 0) lines.push("- Starter (100%): " + (state.levain.starter ?? 0).toFixed(1) + " g");
+    if ((state.levain.flourAdd ?? 0) > 0 || (state.levain.waterAdd ?? 0) > 0) {
+      lines.push("- Mąka do dodania: " + (state.levain.flourAdd ?? 0).toFixed(1) + " g");
+      lines.push("- Woda do dodania: " + (state.levain.waterAdd ?? 0).toFixed(1) + " g");
+    }
+    if (levFlourText !== DASH) lines.push("- Mąka w zaczynie (łącznie): " + levFlourText + " g");
+    if (levWaterText !== DASH) lines.push("- Woda w zaczynie (łącznie): " + levWaterText + " g");
+
+    lines.push("\nHydracja ciasta:");
+    if (targetHydro > 0) lines.push("- Docelowa hydracja: " + targetHydro.toFixed(1) + "%");
+    if (totalFlourText !== DASH) lines.push("- Łączna masa mąki (mieszanka + zaczyn): " + totalFlourText + " g");
+    if (totalWaterText !== DASH) lines.push("- Łączna ilość wody (łącznie z zaczynem): " + totalWaterText + " g");
+    if (addedWater > 0) lines.push("- Woda do dodania: " + addedWater.toFixed(1) + " g");
+
+    lines.push("\nSól:");
+    if (saltText !== DASH) lines.push(`- Dodatek soli (${saltPct.toFixed(1)}%): ${saltText} g`);
+
+    return lines.join("\n");
+  }
+
+  $("saveRecipeBtn")?.addEventListener("click", () => {
+    state.recipeText = generateRecipeText();
+    scheduleRecalc("edit");
+  });
+
+  if (state.saltPct == null) state.saltPct = 2;
+
+  scheduleRecalc("init");
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js")
+        .catch(err => console.error("SW registration failed:", err));
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
